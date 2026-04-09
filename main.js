@@ -364,9 +364,12 @@ function createWindow() {
       ses.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
 
       let resolved = false;
+      let timeoutId = null;
+
       const done = (token) => {
         if (resolved) return;
         resolved = true;
+        if (timeoutId) clearTimeout(timeoutId);
         console.log('[Main] [TalkJS] Token result:', token ? '✓ Token acquired' : '✗ No token');
         try { hiddenWin.destroy(); } catch(e) {
           console.error('[Main] [TalkJS] Error on window destroy:', e.message);
@@ -385,12 +388,22 @@ function createWindow() {
             console.log('[Main] [TalkJS] ✓ authToken found in URL');
             done(token);
           } else {
-            console.log('[Main] [TalkJS] No authToken in params');
+            console.log('[Main] [TalkJS] No authToken in params:', u.searchParams.toString());
           }
         } catch(e) {
           console.error('[Main] [TalkJS] Error parsing WebSocket URL:', e.message);
         }
         callback({});
+      });
+
+      // Also intercept API responses for talkjs token
+      console.log('[Main] [TalkJS] Setting up API response interceptor...');
+      ses.webRequest.onCompleted({ urls: ['https://www.eldorado.gg/api/*', 'https://api.eldorado.gg/*'] }, (details) => {
+        try {
+          if (details.statusCode === 200 && (details.url.includes('/users/') || details.url.includes('profile'))) {
+            console.log('[Main] [TalkJS] API response received:', details.url.substring(0, 80));
+          }
+        } catch(e) {}
       });
 
       // Also intercept any Eldorado API response that contains a TalkJS JWT
@@ -412,20 +425,52 @@ function createWindow() {
 
       hiddenWin.webContents.on('did-fail-load', (event, errorCode, errorDescription, validatedURL) => {
         console.error('[Main] [TalkJS] Failed to load URL:', errorCode, errorDescription);
+        // Timeout immediately on failure
+        setTimeout(() => done(null), 1000);
       });
 
-      // Timeout after 20s
-      const timeoutId = setTimeout(() => {
-        console.warn('[Main] [TalkJS] ⚠ Token fetch timeout (20s)');
-        done(null);
-      }, 20000);
+      hiddenWin.webContents.on('did-finish-load', () => {
+        console.log('[Main] [TalkJS] Page loaded, executing token extraction script...');
+        // Try to extract token from the page via JavaScript
+        hiddenWin.webContents.executeJavaScript(`
+          (function() {
+            try {
+              // Look for token in window object
+              if (window.talkjsToken) {
+                return { token: window.talkjsToken };
+              }
+              // Look for token in localStorage
+              const token = localStorage.getItem('talkjs_token') || localStorage.getItem('authToken');
+              if (token) {
+                return { token: token };
+              }
+              // Look in sessionStorage
+              const sesToken = sessionStorage.getItem('talkjs_token') || sessionStorage.getItem('authToken');
+              if (sesToken) {
+                return { token: sesToken };
+              }
+              return { token: null };
+            } catch(e) {
+              console.error('Error extracting token:', e.message);
+              return { token: null };
+            }
+          })();
+        `).then(result => {
+          console.log('[Main] [TalkJS] Page script result:', result);
+          if (result && result.token) {
+            console.log('[Main] [TalkJS] ✓ Token extracted from page');
+            done(result.token);
+          }
+        }).catch(err => {
+          console.error('[Main] [TalkJS] Error executing page script:', err.message);
+        });
+      });
 
-      // Clear timeout if we get token earlier
-      const originalDone = done;
-      global.talkjsDone = () => {
-        clearTimeout(timeoutId);
-        originalDone(null);
-      };
+      // Timeout after 25s
+      timeoutId = setTimeout(() => {
+        console.warn('[Main] [TalkJS] ⚠ Token fetch timeout (25s)');
+        done(null);
+      }, 25000);
     });
   });
 
