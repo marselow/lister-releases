@@ -6070,6 +6070,7 @@ WHAT YOU WILL RECEIVE:
             return;
           }
           console.log('[TalkJS] Cookie found, fetching user and token...');
+          const { ipcRenderer } = require('electron');
           const [userRes, token] = await Promise.all([
             apiRequest(eldoradoCookie, '/api/users/me'),
             ipcRenderer.invoke('get-talkjs-token', eldoradoCookie),
