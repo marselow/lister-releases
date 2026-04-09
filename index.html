@@ -6159,8 +6159,17 @@ WHAT YOU WILL RECEIVE:
     }
 
     function onChatTabOpen() {
-      if (!eldoradoCookie) return;
-      if (chatOrders.length === 0 && !chatLoading) loadChatOrders(true);
+      console.log('[onChatTabOpen] Tab opened');
+      if (!eldoradoCookie) {
+        console.warn('[onChatTabOpen] No eldorado cookie connected');
+        return;
+      }
+      console.log('[onChatTabOpen] Cookie found, loading orders...');
+      if (chatOrders.length === 0 && !chatLoading) {
+        loadChatOrders(true);
+      } else {
+        console.log('[onChatTabOpen] Orders already loaded or loading');
+      }
       initTalkJS();
     }
 
