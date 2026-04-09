@@ -6087,7 +6087,7 @@ WHAT YOU WILL RECEIVE:
           talkjsAuthToken = token;
           console.log('[TalkJS] userId:', userId, 'userName:', userName);
           if (token) console.log('[TalkJS] ✓ Auth token acquired');
-          else console.warn('[TalkJS] ⚠ No token - identity verification may fail');
+          else console.warn('[TalkJS] ⚠ No token - using anonymous mode');
           console.log('[TalkJS] Waiting for Talk.ready...');
           if (typeof Talk === 'undefined') {
             console.error('[TalkJS] Talk library not loaded!');
@@ -6096,11 +6096,20 @@ WHAT YOU WILL RECEIVE:
           await Talk.ready;
           console.log('[TalkJS] ✓ Talk library ready');
           const me = new Talk.User({ id: userId, name: userName });
-          talkjsSession = new Talk.Session({
+          const sessionConfig = {
             appId: '49mLECOW',
             me,
-            ...(token ? { token: () => Promise.resolve(token) } : {}),
-          });
+          };
+          
+          // Only add token if we have one
+          if (token) {
+            sessionConfig.token = () => Promise.resolve(token);
+            console.log('[TalkJS] Creating session WITH token');
+          } else {
+            console.log('[TalkJS] Creating session WITHOUT token (anonymous mode)');
+          }
+          
+          talkjsSession = new Talk.Session(sessionConfig);
           console.log('[TalkJS] ✓ Session created:', talkjsSession);
           console.log('[TalkJS] ========== INIT SUCCESS ==========');
         } catch(e) {
@@ -6397,7 +6406,11 @@ WHAT YOU WILL RECEIVE:
       talkjsWrap.classList.add('active');
 
       if (talkjsChatbox) { 
-        talkjsChatbox.destroy(); 
+        try { 
+          talkjsChatbox.destroy(); 
+        } catch(e) { 
+          console.warn('[ChatDetail] Warning destroying chatbox:', e.message); 
+        }
         talkjsChatbox = null; 
       }
 
@@ -6405,7 +6418,7 @@ WHAT YOU WILL RECEIVE:
 
       if (!convId) {
         console.warn('[ChatDetail] ⚠ No conversation ID - chat not available');
-        container.innerHTML = '<div style="padding:20px;color:var(--text-muted);font-size:12px;text-align:center">Chat not available for this order. No conversation ID found.</div>';
+        container.innerHTML = '<div style="padding:20px;color:var(--text-muted);font-size:12px;text-align:center">Chat not available for this order.<br><small>Conversation ID not found in order data.</small></div>';
         return;
       }
 
@@ -6414,7 +6427,7 @@ WHAT YOU WILL RECEIVE:
 
       if (!talkjsSession) {
         console.error('[ChatDetail] ✗ TalkJS session not initialized');
-        container.innerHTML = '<div style="padding:20px;color:var(--red,#f87171);font-size:12px;text-align:center">Failed to load chat. TalkJS session initialization failed. Check console for details.</div>';
+        container.innerHTML = '<div style="padding:20px;color:var(--red,#f87171);font-size:12px;text-align:center"><strong>Failed to load chat</strong><br>TalkJS session initialization failed.<br><small>Check console (F12) for details.</small></div>';
         return;
       }
 
@@ -6435,8 +6448,20 @@ WHAT YOU WILL RECEIVE:
         console.log('[ChatDetail] ========== RENDER SUCCESS ==========');
       } catch(e) {
         console.error('[ChatDetail] ✗ Error creating/mounting chatbox:', e.message);
+        console.error('[ChatDetail] Error name:', e.name);
         console.error('[ChatDetail] Stack:', e.stack);
-        container.innerHTML = `<div style="padding:20px;color:var(--red,#f87171);font-size:12px;text-align:center">Error loading chat: ${e.message}</div>`;
+        
+        // Provide specific error messages
+        let errorMsg = e.message;
+        if (e.message.includes('authenticate')) errorMsg = 'Authentication failed - check your session';
+        if (e.message.includes('401')) errorMsg = 'Unauthorized - invalid credentials';
+        if (e.message.includes('404')) errorMsg = 'Conversation not found';
+        
+        container.innerHTML = `<div style="padding:20px;color:var(--red,#f87171);font-size:12px;text-align:center">
+          <strong>Error loading chat</strong><br>
+          ${errorMsg}<br>
+          <small>Please try refreshing or selecting another order.</small>
+        </div>`;
       }
     }
 
