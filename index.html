@@ -1440,6 +1440,33 @@
     .chat-detail-empty svg { width: 40px; height: 40px; opacity: 0.3; }
     .chat-detail-empty p { font-size: 13px; margin: 0; }
 
+    /* TalkJS Chat Container */
+    #chat-talkjs-wrap {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      position: relative;
+      min-height: 0;
+      background: var(--bg-card);
+    }
+    #chat-talkjs-wrap.active { display: flex !important; }
+    
+    #chat-talkjs-container {
+      flex: 1;
+      height: 100%;
+      min-height: 0;
+      width: 100%;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* TalkJS iframes and elements */
+    #chat-talkjs-container > * {
+      width: 100% !important;
+      height: 100% !important;
+    }
+
     .chat-detail-header {
       padding: 14px 18px 12px;
       border-bottom: 1px solid var(--border);
@@ -6087,8 +6114,21 @@ WHAT YOU WILL RECEIVE:
 
 
     function resetChatDetail() {
-      if (talkjsChatbox) { talkjsChatbox.destroy(); talkjsChatbox = null; }
-      document.getElementById('chat-detail').innerHTML = `
+      console.log('[Reset] Resetting chat detail...');
+      if (talkjsChatbox) { 
+        try { 
+          talkjsChatbox.destroy(); 
+        } catch(e) { 
+          console.error('[Reset] Error destroying chatbox:', e.message); 
+        }
+        talkjsChatbox = null; 
+      }
+      const chatDetail = document.getElementById('chat-detail');
+      if (!chatDetail) {
+        console.warn('[Reset] chat-detail element not found');
+        return;
+      }
+      chatDetail.innerHTML = `
         <div class="chat-detail-empty" id="chat-empty-state">
           <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
           <p>Select an order to view conversation</p>
@@ -6096,6 +6136,7 @@ WHAT YOU WILL RECEIVE:
         <div id="chat-talkjs-wrap" style="display:none;flex:1;flex-direction:column;position:relative;min-height:0">
           <div id="chat-talkjs-container" style="flex:1;height:100%;min-height:0"></div>
         </div>`;
+      console.log('[Reset] Chat detail reset complete');
     }
 
     function setChatFilter(filter, btn) {
@@ -6336,10 +6377,19 @@ WHAT YOU WILL RECEIVE:
 
       console.log('[ChatDetail] Elements found - emptyEl:', !!emptyEl, 'wrap:', !!talkjsWrap, 'container:', !!container);
 
+      if (!emptyEl || !talkjsWrap || !container) {
+        console.error('[ChatDetail] ✗ Required DOM elements not found!');
+        return;
+      }
+
       emptyEl.style.display = 'none';
       talkjsWrap.style.display = 'flex';
+      talkjsWrap.classList.add('active');
 
-      if (talkjsChatbox) { talkjsChatbox.destroy(); talkjsChatbox = null; }
+      if (talkjsChatbox) { 
+        talkjsChatbox.destroy(); 
+        talkjsChatbox = null; 
+      }
 
       container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;gap:8px;color:var(--text-muted);font-size:12px"><div style="width:16px;height:16px;border:2px solid var(--accent);border-top-color:transparent;border-radius:50%;animation:spin .8s linear infinite"></div>Loading chat...</div>';
 
