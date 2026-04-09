@@ -6052,17 +6052,17 @@ WHAT YOU WILL RECEIVE:
     let chatSelectedOrder = null;
     let chatLoading = false;
 
-    // TalkJS
-    let talkjsSession = null;
-    let talkjsAuthToken = null;
-    let talkjsUserId = null;
-    let talkjsChatbox = null;
-    let talkjsInitPromise = null;
+    // TalkJS variables - exposed globally for debugging
+    window.talkjsSession = null;
+    window.talkjsAuthToken = null;
+    window.talkjsUserId = null;
+    window.talkjsChatbox = null;
+    window.talkjsInitPromise = null;
 
     async function initTalkJS() {
-      if (talkjsSession) return;
-      if (talkjsInitPromise) return talkjsInitPromise;
-      talkjsInitPromise = (async () => {
+      if (window.talkjsSession) return;
+      if (window.talkjsInitPromise) return window.talkjsInitPromise;
+      window.talkjsInitPromise = (async () => {
         try {
           console.log('[TalkJS] ========== INIT START ==========');
           if (!eldoradoCookie) {
@@ -6083,8 +6083,8 @@ WHAT YOU WILL RECEIVE:
             console.error('[TalkJS] No userId in response');
             return;
           }
-          talkjsUserId = userId;
-          talkjsAuthToken = token;
+          window.talkjsUserId = userId;
+          window.talkjsAuthToken = token;
           console.log('[TalkJS] userId:', userId, 'userName:', userName);
           if (token) console.log('[TalkJS] ✓ Auth token acquired');
           else console.warn('[TalkJS] ⚠ No token - using anonymous mode');
@@ -6109,14 +6109,14 @@ WHAT YOU WILL RECEIVE:
             console.log('[TalkJS] Creating session WITHOUT token (anonymous mode)');
           }
           
-          talkjsSession = new Talk.Session(sessionConfig);
-          console.log('[TalkJS] ✓ Session created:', talkjsSession);
+          window.talkjsSession = new Talk.Session(sessionConfig);
+          console.log('[TalkJS] ✓ Session created:', window.talkjsSession);
           console.log('[TalkJS] ========== INIT SUCCESS ==========');
         } catch(e) {
           console.error('[TalkJS] ========== INIT FAILED ==========');
           console.error('[TalkJS] Error:', e.message);
           console.error('[TalkJS] Stack:', e.stack);
-          talkjsInitPromise = null;
+          window.talkjsInitPromise = null;
         }
       })();
       return talkjsInitPromise;
@@ -6125,13 +6125,13 @@ WHAT YOU WILL RECEIVE:
 
     function resetChatDetail() {
       console.log('[Reset] Resetting chat detail...');
-      if (talkjsChatbox) { 
+      if (window.talkjsChatbox) { 
         try { 
-          talkjsChatbox.destroy(); 
+          window.talkjsChatbox.destroy(); 
         } catch(e) { 
           console.error('[Reset] Error destroying chatbox:', e.message); 
         }
-        talkjsChatbox = null; 
+        window.talkjsChatbox = null; 
       }
       const chatDetail = document.getElementById('chat-detail');
       if (!chatDetail) {
@@ -6405,13 +6405,13 @@ WHAT YOU WILL RECEIVE:
       talkjsWrap.style.display = 'flex';
       talkjsWrap.classList.add('active');
 
-      if (talkjsChatbox) { 
+      if (window.talkjsChatbox) { 
         try { 
-          talkjsChatbox.destroy(); 
+          window.talkjsChatbox.destroy(); 
         } catch(e) { 
           console.warn('[ChatDetail] Warning destroying chatbox:', e.message); 
         }
-        talkjsChatbox = null; 
+        window.talkjsChatbox = null; 
       }
 
       container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;gap:8px;color:var(--text-muted);font-size:12px"><div style="width:16px;height:16px;border:2px solid var(--accent);border-top-color:transparent;border-radius:50%;animation:spin .8s linear infinite"></div>Loading chat...</div>';
@@ -6425,7 +6425,7 @@ WHAT YOU WILL RECEIVE:
       console.log('[ChatDetail] Initializing TalkJS...');
       await initTalkJS(eldoradoCookie);
 
-      if (!talkjsSession) {
+      if (!window.talkjsSession) {
         console.error('[ChatDetail] ✗ TalkJS session not initialized');
         container.innerHTML = '<div style="padding:20px;color:var(--red,#f87171);font-size:12px;text-align:center"><strong>Failed to load chat</strong><br>TalkJS session initialization failed.<br><small>Check console (F12) for details.</small></div>';
         return;
@@ -6434,16 +6434,16 @@ WHAT YOU WILL RECEIVE:
       console.log('[ChatDetail] ✓ TalkJS session ready, creating chatbox...');
       container.innerHTML = '';
       try {
-        const conversation = talkjsSession.getOrCreateConversation(convId);
+        const conversation = window.talkjsSession.getOrCreateConversation(convId);
         console.log('[ChatDetail] ✓ Conversation fetched:', conversation);
         
-        talkjsChatbox = talkjsSession.createChatbox();
+        window.talkjsChatbox = window.talkjsSession.createChatbox();
         console.log('[ChatDetail] ✓ Chatbox created');
         
-        talkjsChatbox.select(conversation);
+        window.talkjsChatbox.select(conversation);
         console.log('[ChatDetail] ✓ Conversation selected');
         
-        await talkjsChatbox.mount(container);
+        await window.talkjsChatbox.mount(container);
         console.log('[ChatDetail] ✓ Chatbox mounted successfully');
         console.log('[ChatDetail] ========== RENDER SUCCESS ==========');
       } catch(e) {
