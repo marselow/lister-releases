@@ -9625,9 +9625,13 @@ Don't worry — your remaining items may come from a different account, but your
       } catch(e) {}
 
       // Prepend to chatOrders array and DOM (newest first)
+      console.log('[CHAT] Processing newOrders:', newOrders.length);
       for (let i = newOrders.length - 1; i >= 0; i--) {
         const o = newOrders[i];
-        if (chatOrders.find(c => c.id === o.id)) continue; // already present
+        const alreadyExists = chatOrders.find(c => c.id === o.id);
+        console.log('[CHAT] Order:', { id: o.id, offerId: o.offerId, state: o.state?.state, alreadyExists });
+        if (alreadyExists) { console.log('[CHAT] SKIPPED - already exists'); continue; }
+
         chatOrders.unshift(o);
         const el = buildOrderItem(o);
         const firstItem = listEl.querySelector('.chat-order-item');
@@ -9635,6 +9639,7 @@ Don't worry — your remaining items may come from a different account, but your
         else listEl.prepend(el);
 
         // Auto-registra venda para entregar
+        console.log('[CHAT] Calling adlvAutoRegister...');
         adlvAutoRegister(o);
       }
 
@@ -9646,31 +9651,39 @@ Don't worry — your remaining items may come from a different account, but your
     // ─── Auto registro de venda (sem precisar clicar Mark as Sold) ───────
     async function adlvAutoRegister(order) {
       try {
-        if (!_adlvEnabled) return;  // toggle precisa estar ON
-        if (!order || !_currentUser) return;
+        if (!_adlvEnabled) { adlvLog(`[${order?.offerId}] SKIP: Auto Delivery disabled`, 'warn'); return; }
+        if (!order || !_currentUser) { console.log('[ADLV] Skipped: no order or user'); return; }
         const orderState = order.state?.state || '';
-        if (orderState !== 'Paid' && orderState !== 'paid') return;
+        if (orderState !== 'Paid' && orderState !== 'paid') {
+          adlvLog(`[${order?.offerId}] SKIP: Order state="${orderState}" (not Paid)`, 'warn');
+          return;
+        }
 
         const offerId    = order.offerId || '';
         const offerTitle = order.orderOfferDetails?.offerTitle || order.offerTitle || '';
         const amount     = order.totalPrice?.amount != null ? Number(order.totalPrice.amount) : 0;
-        if (!offerId) return;
+        if (!offerId) { adlvLog(`[?] SKIP: No offerId`, 'warn'); return; }
+
+        adlvLog(`[${offerId}] Processing: ${offerTitle}...`, 'info');
 
         // Já registrada?
         const existing = await _db.query(
           'SELECT id FROM rb_sales WHERE user_id = ? AND offer_id = ? LIMIT 1',
           [_currentUser.id, offerId]
         );
-        if (existing && existing.length > 0) return;
+        if (existing && existing.length > 0) { adlvLog(`[${offerId}] SKIP: Already registered`, 'warn'); return; }
 
         // Acha conta Roblox vinculada
         let rbAccount = order._rbAccount;
-        if (!rbAccount) return;
+        if (!rbAccount) { adlvLog(`[${offerId}] SKIP: No Roblox account linked`, 'warn'); return; }
 
         const accounts = rbLoad();
         const account = accounts.find(a =>
           a.username === rbAccount || String(a.userID || a.username) === rbAccount);
-        if (!account || !account.pets || account.pets.length === 0) return;
+        if (!account || !account.pets || account.pets.length === 0) {
+          adlvLog(`[${offerId}] SKIP: Account "${rbAccount}" not found or has no pets`, 'warn');
+          return;
+        }
 
         // Match por nome + mutação extraída do offerTitle
         const titleLower = (offerTitle || '').toLowerCase();
@@ -9693,8 +9706,14 @@ Don't worry — your remaining items may come from a different account, but your
           if (score > bestScore) { bestScore = score; bestPet = p; }
         }
 
-        if (!bestPet || bestScore < 3) {
-          adlvLog(`[${offerId}] Auto-registro: nenhum pet com match suficiente (best=${bestScore})`, 'warn');
+        if (!bestPet) {
+          adlvLog(`[${offerId}] Auto-registro: nenhum pet encontrado!`, 'error');
+          console.log('[ADLV] ERROR: No pet found despite account having pets');
+          return;
+        }
+        if (bestScore < 3) {
+          adlvLog(`[${offerId}] Auto-registro: score baixo (${bestScore}) - pets: ${account.pets.map(p => p.name).join(', ')}`, 'warn');
+          console.log('[ADLV] Score too low:', bestScore, 'Pets:', account.pets.map(p => ({ name: p.name, mut: p.mutation })));
           return;
         }
 
@@ -9722,6 +9741,7 @@ Don't worry — your remaining items may come from a different account, but your
         await rbLoadSalesGross();
 
         // Enfileira
+        console.log('[ADLV] ENQUEUEING:', { offerId, petName, score: bestScore, accountKey: accKey, convId: order.talkJsConversationId });
         adlvQueueAdd({
           offerId,
           orderId:      order.id || '',  // ← ID do pedido (necessário para /deliver e /cancel)
@@ -9734,9 +9754,10 @@ Don't worry — your remaining items may come from a different account, but your
           buyerUserId:  order.buyerUserId || order.buyer?.id || '',
           msgs:         adlvGetMessages(),
         });
-        adlvLog(`[${offerId}] Auto-registrado: ${petName} (score=${bestScore})`, 'success');
+        adlvLog(`[${offerId}] ✅ Auto-registrado: ${petName} (score=${bestScore})`, 'success');
       } catch(e) {
-        adlvLog(`[${order?.offerId}] Erro no auto-registro: ${e.message}`, 'error');
+        adlvLog(`[${order?.offerId}] ❌ Erro no auto-registro: ${e.message}`, 'error');
+        console.error('[ADLV] Exception:', e);
       }
     }
 
