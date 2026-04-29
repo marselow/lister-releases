@@ -1474,9 +1474,17 @@
       display: none;
       flex: 1;
       flex-direction: column;
+      overflow: hidden;
     }
 
     .tab-panel.active {
+      display: flex;
+    }
+
+    #tab-video-gallery {
+      display: none;
+    }
+    #tab-video-gallery.active {
       display: flex;
     }
 
@@ -3747,7 +3755,7 @@
           <button class="auth-btn" onclick="authDoRegister()" data-i18n="auth.btn.register">Criar Conta</button>
         </div>
       </div>
-      <div style="text-align:center;margin-top:16px;font-size:11px;color:#2a3a52">v1.7.6 · Meowl Lister</div>
+      <div style="text-align:center;margin-top:16px;font-size:11px;color:#2a3a52">v1.9.6 · Meowl Lister</div>
     </div>
   </div>
 
@@ -3897,6 +3905,11 @@
               <span class="label">Auto Delivery</span>
             </div>
 
+            <div class="nav-item" data-tab="video-gallery" onclick="switchTab('video-gallery', this)">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18 4l2 4h-3l2-4h-1zm-11 16h10v-8h8v8c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2v-14c0-1.1.9-2 2-2h14c1.1 0 2 .9 2 2v6h-2v-2h-10v12z"/></svg>
+              <span class="label">Video Proof</span>
+            </div>
+
           <!-- SYSTEM Section -->
           <div class="nav-section">
             <div class="nav-section-label" data-i18n="nav.system">System</div>
@@ -3958,7 +3971,7 @@
             <span class="conn-amount" id="conn-balance">—</span>
           </div>
 
-          <div class="sidebar-version">v1.9.5</div>
+          <div class="sidebar-version">v1.9.6</div>
         </div>
 
       </div>
@@ -5415,7 +5428,7 @@ WHAT YOU WILL RECEIVE:
               <!-- Atualizações -->
               <div class="cfg-card">
                 <div class="cfg-card-title" data-i18n="cfg.updates">🔄 Updates</div>
-                <p class="cfg-desc-text" id="cfg-update-desc"><span data-i18n="cfg.updates.version">Current version:</span> <b style="color:var(--text-primary)" id="cfg-version-label">v1.9.5</b></p>
+                <p class="cfg-desc-text" id="cfg-update-desc"><span data-i18n="cfg.updates.version">Current version:</span> <b style="color:var(--text-primary)" id="cfg-version-label">v1.9.6</b></p>
                 <button class="cfg-save-btn" id="cfg-update-btn" onclick="cfgCheckUpdate()" data-i18n="cfg.updates.btn">🔍 Check for Updates</button>
               </div>
 
@@ -5750,7 +5763,7 @@ WHAT YOU WILL RECEIVE:
                       style="font-size:10px;color:var(--text-secondary);background:none;border:none;cursor:pointer;padding:2px 6px;border-radius:4px;transition:color .15s"
                       onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--text-secondary)'">clear</button>
                   </div>
-                  <div id="adlv-log" style="padding:12px 18px;font-size:11px;font-family:'Consolas',monospace;color:var(--text-secondary);min-height:80px;max-height:160px;overflow-y:auto;line-height:1.7">Waiting for deliveries...</div>
+                  <div id="adlv-log" style="padding:12px 18px;font-size:11px;font-family:'Consolas',monospace;color:var(--text-secondary);min-height:80px;max-height:300px;overflow-y:auto;line-height:1.7">Waiting for deliveries...</div>
                 </div>
 
                 <!-- Delivery History -->
@@ -5763,7 +5776,7 @@ WHAT YOU WILL RECEIVE:
                       <button onclick="adlvLoadHistory('failed')" class="btn-secondary" style="padding:4px 8px;font-size:10px;border:1px solid var(--border-light);background:transparent;color:var(--red);border-radius:4px;cursor:pointer">✗</button>
                     </div>
                   </div>
-                  <div id="adlv-history-list" style="display:flex;flex-direction:column;gap:4px;max-height:200px;overflow-y:auto;padding:0 10px">
+                  <div id="adlv-history-list" style="display:flex;flex-direction:column;gap:4px;max-height:400px;overflow-y:auto;padding:0 10px">
                     <div style="color:var(--text-secondary);font-size:11px;text-align:center;padding:16px">Carregando...</div>
                   </div>
                 </div>
@@ -5924,6 +5937,34 @@ Don't worry — your remaining items may come from a different account, but your
             </div>
           </div>
           <!-- ═══════════════ /AUTO DELIVERY TAB ═══════════════ -->
+
+          <!-- VIDEO GALLERY TAB -->
+          <div class="tab-panel" id="tab-video-gallery">
+            <div id="video-gallery-header" style="display:flex;align-items:center;justify-content:space-between;flex-shrink:0;padding:14px 20px 10px;border-bottom:1px solid var(--border)">
+              <div><h1 style="margin:0;font-size:20px;font-weight:700;color:var(--text-primary)">Video Proof Gallery</h1><p style="margin:4px 0 0;font-size:12px;color:var(--text-secondary)">Delivery video recordings with buyer search</p></div>
+            </div>
+            <div style="flex:1;display:flex;flex-direction:column;overflow:hidden;padding:24px">
+              <!-- Search bar -->
+              <div style="display:flex;gap:8px;margin-bottom:16px">
+                <input type="text" id="video-search" placeholder="Search by buyer name..." class="cfg-input" style="flex:1" oninput="filterVideoGallery()">
+                <button onclick="loadVideoGallery()" class="btn-primary" style="padding:8px 16px;flex-shrink:0">Refresh</button>
+              </div>
+
+              <!-- Video list and player -->
+              <div style="flex:1;display:flex;gap:16px;overflow:hidden;min-height:0">
+                <!-- Video list (left) -->
+                <div style="width:300px;border:1px solid var(--border);border-radius:8px;overflow-y:auto;background:var(--bg-card)">
+                  <div id="video-list" style="display:flex;flex-direction:column"></div>
+                </div>
+
+                <!-- Video player (right) -->
+                <div style="flex:1;display:flex;flex-direction:column;border:1px solid var(--border);border-radius:8px;overflow:hidden;background:var(--bg-card)">
+                  <video id="video-player" style="width:100%;height:100%;background:#000" controls></video>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- ═══════════════ /VIDEO GALLERY TAB ═══════════════ -->
 
           <div class="tab-panel" id="tab-admin" style="overflow:hidden;min-height:0">
             <div id="content-header" style="display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
@@ -7187,6 +7228,7 @@ Don't worry — your remaining items may come from a different account, but your
       if (tabId === 'account') refreshAccount();
       if (tabId === 'imagecache') onImageCacheTabOpen();
       if (tabId === 'admin') onAdminTabOpen();
+      if (tabId === 'video-gallery') loadVideoGallery();
       if (tabId === 'orders' && !_ordLoaded) ordLoad(true);
       if (tabId === 'settings') cfgRenderAccountCard();
     }
@@ -15711,6 +15753,131 @@ Don't worry — your remaining items may come from a different account, but your
       } catch(e) { appAlert('Erro ao limpar cache: ' + e.message); }
     }
 
+    // ════════════════════ AUTO DELIVERY VIDEO RENAMING ════════════════════
+    async function adlvRenameLatestVideo(newName) {
+      try {
+        const { ipcRenderer } = require('electron');
+
+        // Wait a bit for Roblox to finish writing the file
+        await new Promise(r => setTimeout(r, 3000));
+
+        // Try up to 5 times to find and rename the video
+        for (let attempt = 1; attempt <= 5; attempt++) {
+          const result = await ipcRenderer.invoke('list-videos');
+          if (!result.success || !result.videos || result.videos.length === 0) {
+            if (attempt < 5) {
+              await new Promise(r => setTimeout(r, 1000));
+              continue;
+            }
+            return;
+          }
+
+          // Get the most recent video (should be the one we just recorded)
+          const latest = result.videos[0];
+          if (!latest) {
+            if (attempt < 5) {
+              await new Promise(r => setTimeout(r, 1000));
+              continue;
+            }
+            return;
+          }
+
+          // Try to rename it
+          const renameResult = await ipcRenderer.invoke('rename-video', latest.path, newName);
+          if (renameResult.success) {
+            adlvLog(`Video saved: ${newName}.mp4`, 'success');
+            return;
+          }
+        }
+
+        adlvLog(`Could not rename video (file still being written)`, 'warn');
+      } catch(e) {
+        console.warn('[ADLV] Video rename failed:', e.message);
+      }
+    }
+
+    // ════════════════════ VIDEO GALLERY ════════════════════
+    let _videoGalleryData = [];
+
+    async function loadVideoGallery() {
+      try {
+        const { ipcRenderer } = require('electron');
+        const result = await ipcRenderer.invoke('list-videos');
+        if (!result.success) {
+          document.getElementById('video-list').innerHTML = `<div style="padding:12px;color:var(--text-muted);font-size:12px">Error: ${result.error}</div>`;
+          return;
+        }
+        _videoGalleryData = result.videos || [];
+        filterVideoGallery();
+      } catch(e) {
+        document.getElementById('video-list').innerHTML = `<div style="padding:12px;color:var(--red);font-size:12px">Error: ${e.message}</div>`;
+      }
+    }
+
+    function filterVideoGallery() {
+      const search = (document.getElementById('video-search')?.value || '').toLowerCase();
+      const list = document.getElementById('video-list');
+      const filtered = _videoGalleryData.filter(v => v.name.toLowerCase().includes(search));
+
+      list.innerHTML = filtered.map((video, idx) => `
+        <div style="padding:12px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .2s"
+             class="video-item"
+             data-path="${video.path}"
+             data-name="${video.name}"
+             onmouseover="this.style.background='var(--bg-hover)'"
+             onmouseout="this.style.background='transparent'">
+          <div style="font-size:12px;font-weight:600;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${video.name}</div>
+          <div style="font-size:10px;color:var(--text-secondary);margin-top:4px">
+            ${(video.size / 1024 / 1024).toFixed(1)} MB
+          </div>
+          <div style="font-size:9px;color:var(--text-muted);margin-top:2px">
+            ${new Date(video.modified).toLocaleDateString()} ${new Date(video.modified).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}
+          </div>
+        </div>
+      `).join('');
+
+      if (filtered.length === 0) {
+        list.innerHTML = '<div style="padding:12px;color:var(--text-muted);font-size:12px">No videos found</div>';
+        return;
+      }
+
+      // Attach click handlers to video items
+      document.querySelectorAll('.video-item').forEach(el => {
+        el.addEventListener('click', function() {
+          const filePath = this.getAttribute('data-path');
+          const fileName = this.getAttribute('data-name');
+          playVideo(filePath, fileName);
+        });
+      });
+    }
+
+    async function playVideo(filePath, fileName) {
+      try {
+        const videoElement = document.getElementById('video-player');
+        if (!videoElement) {
+          console.error('Video player element not found');
+          return;
+        }
+
+        // Load video via IPC as base64 data URL
+        const { ipcRenderer } = require('electron');
+        const result = await ipcRenderer.invoke('get-video-stream', filePath);
+
+        if (!result.success) {
+          appAlert('Error loading video: ' + result.error);
+          return;
+        }
+
+        // Create data URL from base64
+        const dataUrl = `data:${result.mimeType};base64,${result.data}`;
+        videoElement.src = dataUrl;
+        videoElement.play();
+      } catch(e) {
+        console.error('Error playing video:', e);
+        appAlert('Error playing video: ' + e.message);
+      }
+    }
+
     // Auto-login handled in DOMContentLoaded auth path — do not fire a second concurrent fetch here.
 
     // Load searcher on startup regardless of login state (public API)
@@ -16312,6 +16479,17 @@ Don't worry — your remaining items may come from a different account, but your
           adlvLog(`✓ Trade ${data.offerId} — SUCESSO`, 'success');
           adlvQueueSetStatus(data.offerId, 'done');
           adlvSaveDeliveryLog(data.offerId, item, 'success', null, null);
+
+          // Rename video with buyer name and timestamp
+          try {
+            const buyerNick = item.nick || 'unknown';
+            const now = new Date();
+            const date = now.toISOString().slice(0, 10); // YYYY-MM-DD
+            const time = now.toTimeString().slice(0, 8).replace(/:/g, '-'); // HH-MM-SS
+            const newName = `${buyerNick}_${date}_${time}`;
+            await adlvRenameLatestVideo(newName);
+          } catch(e) { /* silent */ }
+
           if (item?.convId) {
             const msgs = adlvGetMessages();
             await adlvSendMsg(item.convId, msgs.msgThankyou);
@@ -16348,7 +16526,7 @@ Don't worry — your remaining items may come from a different account, but your
           } catch(e) {
             adlvLog(`[${data.offerId}] Falha ao marcar entregue no Eldorado: ${e.message}`, 'error');
           }
-          // Fecha Roblox após entrega bem-sucedida
+          // Fecha Roblox após entrega bem-sucedida (8 segundos após confirmação para gravação)
           try {
             const { ipcRenderer } = require('electron');
             await ipcRenderer.invoke('rbx-close-all');
@@ -17097,7 +17275,11 @@ Don't worry — your remaining items may come from a different account, but your
       window.switchTab = function(tabId, el) {
         orig(tabId, el);
         if (tabId === 'delivery') { adlvPopulateAccounts(); adlvLoadMessages(); }
+        if (tabId === 'video-gallery') loadVideoGallery();
       };
+
+      // Pré-carrega videos em background
+      setTimeout(() => { if (_videoGalleryData.length === 0) loadVideoGallery(); }, 1000);
 
       // Debug helpers — acessíveis pelo console do DevTools
       window._adlv = {

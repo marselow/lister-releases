@@ -1535,14 +1535,118 @@ ipcMain.on('adlv-set-pending', (_e, trade) => {
 ipcMain.handle('adlv-get-pending', () => _adlvPendingTrade);
 
 // Fecha todas as instâncias do RobloxPlayerBeta.exe em execução
-ipcMain.handle('rbx-close-all', async () => {
+ipcMain.handle('rbx-close-all', async (_event, options = {}) => {
   try {
+    const recordVideo = options.recordVideo || false;
+
+    if (recordVideo) {
+      // Press F12 to start recording
+      const { execSync } = require('child_process');
+      try {
+        // Press F12 via SendInput (Windows)
+        execSync(`powershell -Command "Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.SendKeys]::SendWait('{F12}')"`, { timeout: 2000 });
+        console.log('[AutoDelivery] F12 pressed to start recording');
+      } catch(e) {
+        console.warn('[AutoDelivery] Failed to press F12:', e.message);
+      }
+
+      // Wait for video to record (default 15 seconds, customizable)
+      const recordDuration = options.recordDuration || 15000; // ms
+      console.log(`[AutoDelivery] Recording for ${recordDuration}ms...`);
+      await new Promise(r => setTimeout(r, recordDuration));
+
+      // Press F12 again to stop recording
+      try {
+        execSync(`powershell -Command "Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.SendKeys]::SendWait('{F12}')"`, { timeout: 2000 });
+        console.log('[AutoDelivery] F12 pressed to stop recording');
+      } catch(e) {
+        console.warn('[AutoDelivery] Failed to press F12 to stop:', e.message);
+      }
+
+      // Wait a bit for file to be saved
+      await new Promise(r => setTimeout(r, 2000));
+    }
+
+    // Kill Roblox process
     require('child_process').execSync('taskkill /F /IM RobloxPlayerBeta.exe /T', { shell: true, timeout: 5000 });
     console.log('[AutoDelivery] RobloxPlayerBeta.exe encerrado');
     return { ok: true };
   } catch(e) {
     // Processo pode não estar rodando — não é erro crítico
     return { ok: false, error: e.message };
+  }
+});
+
+// Video gallery handlers
+ipcMain.handle('get-video-directory', () => {
+  const videosDir = path.join(os.homedir(), 'Videos', 'Roblox');
+  return videosDir;
+});
+
+ipcMain.handle('list-videos', async () => {
+  const videosDir = path.join(os.homedir(), 'Videos', 'Roblox');
+  try {
+    if (!fs.existsSync(videosDir)) {
+      return { success: false, videos: [], error: 'Directory not found' };
+    }
+    const files = fs.readdirSync(videosDir);
+    const videos = files
+      .filter(f => /\.(mp4|mkv|mov|avi)$/i.test(f))
+      .map(f => {
+        const fullPath = path.join(videosDir, f);
+        const stats = fs.statSync(fullPath);
+        return {
+          name: f,
+          path: fullPath,
+          size: stats.size,
+          created: stats.birthtime,
+          modified: stats.mtime
+        };
+      })
+      .sort((a, b) => b.modified - a.modified);
+    return { success: true, videos };
+  } catch(e) {
+    return { success: false, videos: [], error: e.message };
+  }
+});
+
+ipcMain.handle('rename-video', async (_event, oldPath, newName) => {
+  try {
+    const dir = path.dirname(oldPath);
+    const ext = path.extname(oldPath);
+    const newPath = path.join(dir, newName + ext);
+
+    if (fs.existsSync(newPath)) {
+      return { success: false, error: 'File already exists' };
+    }
+
+    fs.renameSync(oldPath, newPath);
+    return { success: true, newPath };
+  } catch(e) {
+    return { success: false, error: e.message };
+  }
+});
+
+ipcMain.handle('open-video', async (_event, videoPath) => {
+  try {
+    await shell.openPath(videoPath);
+    return { success: true };
+  } catch(e) {
+    return { success: false, error: e.message };
+  }
+});
+
+ipcMain.handle('get-video-stream', async (_event, videoPath) => {
+  try {
+    const normalizedPath = videoPath.replace(/\//g, '\\');
+    if (!fs.existsSync(normalizedPath)) {
+      return { success: false, error: 'File not found' };
+    }
+    const data = fs.readFileSync(normalizedPath);
+    const base64 = data.toString('base64');
+    return { success: true, data: base64, mimeType: 'video/mp4' };
+  } catch(e) {
+    return { success: false, error: e.message };
   }
 });
 
