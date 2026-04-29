@@ -9924,29 +9924,26 @@ Don't worry — your remaining items may come from a different account, but your
         if (changed) _resortChatList();
       });
 
-      // Auto Delivery: escuta mensagens recebidas para processar questionário
-      window.talkjsSession.unreads.onChange(unreadConvs => {
+      // Combined unreads.onChange: Auto Delivery processing + unread counts
+      _chatUnreadSub = window.talkjsSession.unreads.onChange(async (unreadConvs) => {
+        const convMap = _chatConvMap();
+        // Reset all unread counts
+        chatOrders.forEach(o => o._unreadCount = 0);
+
+        // Process each unread conversation
         for (const uc of unreadConvs) {
+          // 1. Auto Delivery: check for nick confirmation messages
           const qItem = _adlvQueue.find(i => i.convId === uc.conversation.id &&
             ['nick_sent','nick_confirming'].includes(i.status));
           const msgBody = uc.lastMessage?.body || uc.lastMessage?.text || '';
           const msgSender = uc.lastMessage?.senderId || uc.lastMessage?.sender?.id || '';
           const msgTs = uc.lastMessage?.timestamp || uc.lastMessage?.createdAt || 0;
-          if (qItem) console.log('[ADLV-DEBUG] lastMessage FULL:', JSON.stringify(uc.lastMessage));
-          console.log('[ADLV-DEBUG] unread:', uc.conversation.id, '| qItem:', !!qItem, '| body:', msgBody, '| sender:', msgSender, '| me:', window.talkjsUserId);
-          if (qItem && uc.lastMessage && msgSender !== window.talkjsUserId) {
-            adlvHandleBuyerMessage(uc.conversation.id, msgBody, msgTs);
-          }
-        }
-      });
 
-      // 2. unreads.onChange: unread message counts
-      _chatUnreadSub = window.talkjsSession.unreads.onChange(unreadConvs => {
-        const convMap = _chatConvMap();
-        // Reset all unread counts
-        chatOrders.forEach(o => o._unreadCount = 0);
-        // Set from TalkJS data
-        for (const uc of unreadConvs) {
+          if (qItem && uc.lastMessage && msgSender !== window.talkjsUserId) {
+            await adlvHandleBuyerMessage(uc.conversation.id, msgBody, msgTs);
+          }
+
+          // 2. Update unread counts and chat list
           const order = convMap[uc.conversation.id];
           if (order) {
             order._unreadCount = uc.unreadMessageCount || 0;
@@ -10264,11 +10261,34 @@ Don't worry — your remaining items may come from a different account, but your
       // Mark conversation as read in TalkJS
       try { _cchatConvRef.sendRead(); } catch(e) {}
 
+      // Auto Delivery: if this conversation has a pending item, force sync of TalkJS data
+      const adlvItem = _adlvQueue.find(i => i.convId === convId && ['nick_sent', 'nick_confirming'].includes(i.status));
+      if (adlvItem) {
+        try {
+          // Force TalkJS to reload conversation data to ensure it's synchronized
+          await new Promise(r => setTimeout(r, 100));
+        } catch(e) { /* silent */ }
+      }
+
       // Subscribe to messages
       _cchatMsgSub = _cchatConvRef.subscribeMessages((snapshot, loadedAll) => {
         if (_cchatCurrentConvId !== convId) return; // stale subscription
         _cchatLoadedAll = loadedAll;
         _cchatRenderMessages(snapshot, loadedAll);
+
+        // Auto Delivery: reprocess latest message if waiting for confirmation
+        setTimeout(() => {
+          if (snapshot && snapshot.length > 0) {
+            const adlvItem = _adlvQueue.find(i => i.convId === convId && ['nick_sent', 'nick_confirming'].includes(i.status));
+            if (adlvItem) {
+              const lastMsg = snapshot[snapshot.length - 1];
+              if (lastMsg && lastMsg.body && lastMsg.senderId && lastMsg.senderId !== window.talkjsUserId) {
+                const msgTs = lastMsg.timestamp || lastMsg.createdAt || Date.now();
+                adlvHandleBuyerMessage(convId, lastMsg.body, msgTs).catch(() => {});
+              }
+            }
+          }
+        }, 200); // Small delay to ensure message is in DOM
       });
 
       // Subscribe to typing
@@ -10289,6 +10309,24 @@ Don't worry — your remaining items may come from a different account, but your
           }
         }
       });
+
+      // Auto Delivery: when conversation is loaded, trigger reprocessing of any pending messages
+      // This ensures that if a message arrived before the conversation was ready, it gets processed
+      if (window.talkjsSession) {
+        try {
+          const msgs = snapshot || [];
+          const convItem = _adlvQueue.find(i => i.convId === convId && ['nick_sent', 'nick_confirming'].includes(i.status));
+          if (convItem && msgs.length > 0) {
+            // Get the last message from the loaded conversation
+            const lastMsg = msgs[msgs.length - 1];
+            if (lastMsg && lastMsg.body && lastMsg.senderId && lastMsg.senderId !== window.talkjsUserId) {
+              // Reprocess the message (in case it arrived before conversation was ready)
+              const msgTs = lastMsg.timestamp || lastMsg.createdAt || Date.now();
+              adlvHandleBuyerMessage(convId, lastMsg.body, msgTs).catch(e => console.error('[ADLV] Reprocess error:', e));
+            }
+          }
+        } catch(e) { /* silent */ }
+      }
 
       // Scroll detection — lock auto-scroll when user scrolls up
       messagesEl.addEventListener('scroll', () => {
