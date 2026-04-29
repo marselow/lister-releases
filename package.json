@@ -1,0 +1,65 @@
+{
+  "name": "meowl-lister",
+  "version": "1.9.5",
+  "description": "Meowl Lister - Listing Tool by Marcelo",
+  "main": "main.js",
+  "scripts": {
+    "start": "set ELECTRON_RUN_AS_NODE=&& electron .",
+    "build": "electron-builder --win",
+    "publish": "electron-builder --win --publish always"
+  },
+  "keywords": [],
+  "author": "Marcelo",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^28.3.3",
+    "electron-builder": "^24.9.1",
+    "jimp": "^1.6.0",
+    "png-to-ico": "^3.0.1"
+  },
+  "build": {
+    "appId": "com.marcelo.meowllister",
+    "productName": "Meowl Lister",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "index.html",
+      "db.js",
+      "cat.png",
+      "assets/**/*",
+      "public/**/*",
+      "certs/**/*"
+    ],
+    "publish": {
+      "provider": "github",
+      "owner": "marselow",
+      "repo": "lister-releases"
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "assets/icon.ico",
+      "artifactName": "MeowlListerSetup.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    }
+  },
+  "dependencies": {
+    "@talkjs/core": "^1.9.0",
+    "@talkjs/web-components": "^0.1.8",
+    "mysql2": "^3.20.0",
+    "ws": "^8.20.0"
+  }
+}
