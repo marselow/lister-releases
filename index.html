@@ -9654,8 +9654,9 @@ Don't worry — your remaining items may come from a different account, but your
         if (!_adlvEnabled) { adlvLog(`[${order?.offerId}] SKIP: Auto Delivery disabled`, 'warn'); return; }
         if (!order || !_currentUser) { console.log('[ADLV] Skipped: no order or user'); return; }
         const orderState = order.state?.state || '';
-        if (orderState !== 'Paid' && orderState !== 'paid') {
-          adlvLog(`[${order?.offerId}] SKIP: Order state="${orderState}" (not Paid)`, 'warn');
+        // Se está no Chat, já foi paga. Não skipar por estado "Pending" (muito rápido)
+        if (orderState && orderState.toLowerCase() === 'cancelled') {
+          adlvLog(`[${order?.offerId}] SKIP: Order cancelled`, 'warn');
           return;
         }
 
@@ -9666,11 +9667,21 @@ Don't worry — your remaining items may come from a different account, but your
 
         adlvLog(`[${offerId}] Processing: ${offerTitle}...`, 'info');
 
-        // Já registrada?
-        const existing = await _db.query(
-          'SELECT id FROM rb_sales WHERE user_id = ? AND offer_id = ? LIMIT 1',
-          [_currentUser.id, offerId]
-        );
+        // Já registrada? (verifica por conversation_id se disponível, fallback para offer_id)
+        const convId = order.talkJsConversationId || null;
+        let existing;
+        if (convId) {
+          existing = await _db.query(
+            'SELECT id FROM rb_sales WHERE conversation_id = ? LIMIT 1',
+            [convId]
+          );
+        } else {
+          // Fallback: se não houver convId, verifica se esse offer_id já foi vendido para esse usuário
+          existing = await _db.query(
+            'SELECT id FROM rb_sales WHERE user_id = ? AND offer_id = ? AND sold_at > DATE_SUB(NOW(), INTERVAL 1 HOUR) LIMIT 1',
+            [_currentUser.id, offerId]
+          );
+        }
         if (existing && existing.length > 0) { adlvLog(`[${offerId}] SKIP: Already registered`, 'warn'); return; }
 
         // Acha conta Roblox vinculada
@@ -9724,10 +9735,10 @@ Don't worry — your remaining items may come from a different account, but your
 
         // Insere no DB
         await _db.query(
-          'INSERT INTO rb_sales (user_id, pet_name, mutation, ms_label, generation, offer_title, offer_id, amount, account_username, account_key, pet_data) VALUES (?,?,?,?,?,?,?,?,?,?,?)',
+          'INSERT INTO rb_sales (user_id, pet_name, mutation, ms_label, generation, offer_title, offer_id, conversation_id, amount, account_username, account_key, pet_data) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)',
           [_currentUser.id, petName, bestPet.mutation || 'None', bestPet._msLabel || '',
-           bestPet._generation || null, offerTitle, offerId, amount,
-           accUsername || '', accKey, JSON.stringify(petSnapshot)]
+           bestPet._generation || null, offerTitle, offerId, convId || null,
+           amount, accUsername || '', accKey, JSON.stringify(petSnapshot)]
         );
 
         // Remove pet do inventário
