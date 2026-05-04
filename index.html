@@ -16,9 +16,10 @@
     input[type="number"]::-webkit-inner-spin-button,
     input[type="number"]::-webkit-outer-spin-button {
       -webkit-appearance: none;
+      appearance: none;
       margin: 0;
     }
-    input[type="number"] { -moz-appearance: textfield; }
+    input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
 
     :root {
       --bg-primary: #0a0e1a;
@@ -994,7 +995,7 @@
     .srch-card-header { padding:8px 12px 6px; border-bottom:1px solid var(--border); }
     .srch-card-title { font-size:10px; color:var(--text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
     .srch-card-middle { display:flex; align-items:center; justify-content:space-between; padding:10px 12px; flex:1; min-height:72px; }
-    .srch-card-petname { font-size:12px; font-weight:700; color:var(--text-primary); text-transform:uppercase; letter-spacing:.3px; flex:1; line-height:1.3; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
+    .srch-card-petname { font-size:12px; font-weight:700; color:var(--text-primary); text-transform:uppercase; letter-spacing:.3px; flex:1; line-height:1.3; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; line-clamp:2; -webkit-box-orient:vertical; }
     .srch-card-petname-wrap { display:flex; align-items:flex-start; gap:5px; }
     .srch-card-snowflake { color:#60a5fa; font-size:11px; flex-shrink:0; }
     .srch-card-thumb { width:56px; height:56px; object-fit:cover; border-radius:6px; flex-shrink:0; margin-left:8px; }
@@ -2264,10 +2265,6 @@
       flex-shrink: 0;
     }
     .cchat-typing.visible { display: block; }
-      width: 100%;
-      overflow: hidden;
-      position: relative;
-    }
 
     .chat-detail-header {
       padding: 14px 18px 12px;
@@ -2982,7 +2979,7 @@
     .lst-card-body { padding: 7px 9px 4px; flex: 1; }
     .lst-card-title {
       font-size: 11px; font-weight: 600; color: var(--text-primary); line-height: 1.35;
-      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+      display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
     }
 
     /* ── Action buttons ── */
@@ -3657,7 +3654,7 @@
     }
     .al-ap-inp:focus { border-color: rgba(211,171,80,0.45); }
     #al-ap-undercut-custom::-webkit-outer-spin-button,
-    #al-ap-undercut-custom::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+    #al-ap-undercut-custom::-webkit-inner-spin-button { -webkit-appearance: none; appearance: none; margin: 0; }
     .al-ap-btns { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
     .al-ap-btn {
       padding: 8px 14px; border-radius: 6px; font-size: 11px; font-weight: 700;
@@ -3755,7 +3752,7 @@
           <button class="auth-btn" onclick="authDoRegister()" data-i18n="auth.btn.register">Criar Conta</button>
         </div>
       </div>
-      <div style="text-align:center;margin-top:16px;font-size:11px;color:#2a3a52">v1.9.7 · Meowl Lister</div>
+      <div style="text-align:center;margin-top:16px;font-size:11px;color:#2a3a52">v1.9.8 · Meowl Lister</div>
     </div>
   </div>
 
@@ -3971,7 +3968,7 @@
             <span class="conn-amount" id="conn-balance">—</span>
           </div>
 
-          <div class="sidebar-version">v1.9.7</div>
+          <div class="sidebar-version">v1.9.8</div>
         </div>
 
       </div>
@@ -5428,7 +5425,7 @@ WHAT YOU WILL RECEIVE:
               <!-- Atualizações -->
               <div class="cfg-card">
                 <div class="cfg-card-title" data-i18n="cfg.updates">🔄 Updates</div>
-                <p class="cfg-desc-text" id="cfg-update-desc"><span data-i18n="cfg.updates.version">Current version:</span> <b style="color:var(--text-primary)" id="cfg-version-label">v1.9.7</b></p>
+                <p class="cfg-desc-text" id="cfg-update-desc"><span data-i18n="cfg.updates.version">Current version:</span> <b style="color:var(--text-primary)" id="cfg-version-label">v1.9.8</b></p>
                 <button class="cfg-save-btn" id="cfg-update-btn" onclick="cfgCheckUpdate()" data-i18n="cfg.updates.btn">🔍 Check for Updates</button>
               </div>
 
@@ -6939,7 +6936,7 @@ Don't worry — your remaining items may come from a different account, but your
                 showAccountChecking();
                 preloadAllData();
                 fetchEldoradoProfile(eldoradoCookie)
-                  .then(({ json }) => { showAccountConnected(json); _lastConnectedCookie = eldoradoCookie; startNtfPolling(); })
+                  .then(({ json }) => { showAccountConnected(json); _lastConnectedCookie = eldoradoCookie; startNtfPolling(); _startSessionRefreshLoop(); })
                   .catch(() => { showAccountDisconnected(); });
               }
               _hideAuthOverlay();
@@ -7089,6 +7086,9 @@ Don't worry — your remaining items may come from a different account, but your
         document.getElementById('ext-status-dot')?.setAttribute('data-st', 'connected');
         document.getElementById('ext-status-text')?.setAttribute('data-st', 'connected');
         connectWithCookieStr(cookie);
+      });
+      ipcRenderer.on('ext-cookie-response', (_e, cookie) => {
+        if (cookie) connectWithCookieStr(cookie);
       });
       ipcRenderer.on('ext-code', (_e, code) => {
         const el = document.getElementById('ext-pair-code');
@@ -9604,23 +9604,25 @@ Don't worry — your remaining items may come from a different account, but your
       const listEl = document.getElementById('chat-order-list');
       if (!listEl) return;
 
-      // Enrich with Roblox account (best-effort)
+      // Enrich with Roblox account (best-effort) — only for orders without _rbAccount already set by polling
       try {
-        const offerIds = newOrders.map(o => o.offerId).filter(Boolean);
+        const ordersNeedingAccount = newOrders.filter(o => !o._rbAccount);
+        const offerIds = ordersNeedingAccount.map(o => o.offerId).filter(Boolean);
         if (offerIds.length && _currentUser) {
           const placeholders = offerIds.map(() => '?').join(',');
           const params = [_currentUser.id, ...offerIds, _currentUser.id, ...offerIds];
-          // ORDER BY id ASC — the first row per offer_id is the current delivery account (FIFO).
+          // ORDER BY src, id — queue rows (offer_accounts) come first, then sales rows.
+          // IDs across the two tables are unrelated, so we cannot mix them in a single id ordering.
           const rows = await _db.query(
-            `SELECT offer_id, account_username, id FROM offer_accounts WHERE user_id = ? AND offer_id IN (${placeholders})
+            `SELECT offer_id, account_username, id, 'queue' AS src FROM offer_accounts WHERE user_id = ? AND offer_id IN (${placeholders})
              UNION ALL
-             SELECT offer_id, account_username, id FROM rb_sales WHERE user_id = ? AND offer_id IN (${placeholders})
-             ORDER BY id ASC`,
+             SELECT offer_id, account_username, id, 'sale'  AS src FROM rb_sales       WHERE user_id = ? AND offer_id IN (${placeholders})
+             ORDER BY src ASC, id ASC`,
             params
           );
           const saleMap = {};
           rows.forEach(s => { if (s.account_username && !saleMap[s.offer_id]) saleMap[s.offer_id] = s.account_username; });
-          newOrders.forEach(o => { o._rbAccount = saleMap[o.offerId] || null; });
+          ordersNeedingAccount.forEach(o => { o._rbAccount = saleMap[o.offerId] || null; });
         }
       } catch(e) {}
 
@@ -9638,9 +9640,7 @@ Don't worry — your remaining items may come from a different account, but your
         if (firstItem) listEl.insertBefore(el, firstItem);
         else listEl.prepend(el);
 
-        // Auto-registra venda para entregar
-        console.log('[CHAT] Calling adlvAutoRegister...');
-        adlvAutoRegister(o);
+        // Auto Delivery is now triggered by pollNewOrders to ensure UUID is captured before DELETE
       }
 
       // Remove "no orders" placeholder if present
@@ -9650,20 +9650,32 @@ Don't worry — your remaining items may come from a different account, but your
 
     // ─── Auto registro de venda (sem precisar clicar Mark as Sold) ───────
     async function adlvAutoRegister(order) {
+      // Helper: libera reserva (volta para fila) ou apaga
+      const releaseReservation = async (mode) => {
+        if (!order?.id || !_currentUser) return;
+        try {
+          if (mode === 'delete') {
+            await _db.query('DELETE FROM offer_accounts WHERE order_id = ?', [order.id]);
+          } else {
+            await _db.query('UPDATE offer_accounts SET order_id = NULL WHERE order_id = ?', [order.id]);
+          }
+        } catch(e) { console.error('[ADLV] releaseReservation failed:', e); }
+      };
       try {
-        if (!_adlvEnabled) { adlvLog(`[${order?.offerId}] SKIP: Auto Delivery disabled`, 'warn'); return; }
+        if (!_adlvEnabled) { adlvLog(`[${order?.offerId}] SKIP: Auto Delivery disabled`, 'warn'); await releaseReservation('release'); return; }
         if (!order || !_currentUser) { console.log('[ADLV] Skipped: no order or user'); return; }
         const orderState = order.state?.state || '';
         // Se está no Chat, já foi paga. Não skipar por estado "Pending" (muito rápido)
         if (orderState && orderState.toLowerCase() === 'cancelled') {
           adlvLog(`[${order?.offerId}] SKIP: Order cancelled`, 'warn');
+          await releaseReservation('delete');
           return;
         }
 
         const offerId    = order.offerId || '';
         const offerTitle = order.orderOfferDetails?.offerTitle || order.offerTitle || '';
         const amount     = order.totalPrice?.amount != null ? Number(order.totalPrice.amount) : 0;
-        if (!offerId) { adlvLog(`[?] SKIP: No offerId`, 'warn'); return; }
+        if (!offerId) { adlvLog(`[?] SKIP: No offerId`, 'warn'); await releaseReservation('release'); return; }
 
         adlvLog(`[${offerId}] Processing: ${offerTitle}...`, 'info');
 
@@ -9676,9 +9688,11 @@ Don't worry — your remaining items may come from a different account, but your
             [convId]
           );
         } else {
-          // Fallback: se não houver convId, verifica se esse offer_id já foi vendido para esse usuário
+          // Fallback: se não houver convId, verifica se esse offer_id já foi vendido para esse usuário.
+          // Janela de 7 dias evita duplicar venda em re-polls após restart/reconexão (a janela de 1h
+          // anterior deixava órfãos serem reinseridos quando o app ficava offline mais que isso).
           existing = await _db.query(
-            'SELECT id FROM rb_sales WHERE user_id = ? AND offer_id = ? AND sold_at > DATE_SUB(NOW(), INTERVAL 1 HOUR) LIMIT 1',
+            'SELECT id FROM rb_sales WHERE user_id = ? AND offer_id = ? AND sold_at > DATE_SUB(NOW(), INTERVAL 7 DAY) LIMIT 1',
             [_currentUser.id, offerId]
           );
         }
@@ -9686,86 +9700,158 @@ Don't worry — your remaining items may come from a different account, but your
 
         // Acha conta Roblox vinculada
         let rbAccount = order._rbAccount;
+        if (!rbAccount && order.id && _currentUser) {
+          // Fallback: a reserva no pollNewOrders pode ter falhado silenciosamente (race condition,
+          // linha ainda não existia, etc). Tenta reservar direto aqui antes de desistir.
+          try {
+            await _db.query(
+              'UPDATE offer_accounts SET order_id = ? WHERE user_id=? AND offer_id=? AND order_id IS NULL ORDER BY id ASC LIMIT 1',
+              [order.id, _currentUser.id, offerId]
+            );
+            const fbRows = await _db.query(
+              'SELECT account_username, pet_uuid FROM offer_accounts WHERE order_id = ? ORDER BY id ASC',
+              [order.id]
+            );
+            if (fbRows && fbRows.length > 0) {
+              rbAccount = fbRows[0].account_username;
+              if (!order._linkedPetUUID && fbRows[0].pet_uuid) order._linkedPetUUID = fbRows[0].pet_uuid;
+              if (!order._allReservations) order._allReservations = fbRows.map(r => ({ pet_uuid: r.pet_uuid, account_username: r.account_username }));
+            }
+          } catch(e) { console.error('[ADLV] fallback reservation failed:', e); }
+        }
         if (!rbAccount) { adlvLog(`[${offerId}] SKIP: No Roblox account linked`, 'warn'); return; }
+        // (Bloco antigo "const accounts = rbLoad(); const account = ..." removido:
+        // criava uma duplicata de `const accounts` com a validação multi-qty abaixo
+        // — duplicata que quebrava o parse do script. A validação multi-qty mais
+        // adiante já carrega contas e valida cada par pet/conta individualmente.)
 
-        const accounts = rbLoad();
-        const account = accounts.find(a =>
-          a.username === rbAccount || String(a.userID || a.username) === rbAccount);
-        if (!account || !account.pets || account.pets.length === 0) {
-          adlvLog(`[${offerId}] SKIP: Account "${rbAccount}" not found or has no pets`, 'warn');
-          return;
-        }
-
-        // Match por nome + mutação extraída do offerTitle
-        const titleLower = (offerTitle || '').toLowerCase();
-        const _knownMutKw = ['galaxy','yin-yang','yin yang','radioactive','prismatic','lunar','astral','tidal','floral','sakura','gold','diamond','frozen','shadow','dark matter','titanium','jade','ancient','rainbow','cursed'];
-
-        let bestPet = null, bestScore = -Infinity;
-        for (const p of account.pets) {
-          const nameLower = (p.name || '').toLowerCase();
-          const mutLower  = (p.mutation && p.mutation !== 'None' ? p.mutation : '').toLowerCase();
-          const msLower   = (p._msLabel || '').toLowerCase();
-          let score = 0;
-          if (nameLower && titleLower.includes(nameLower)) score += 3;
-          if (mutLower) {
-            if (titleLower.includes(mutLower)) score += 2;
-            else score -= 2;
-          } else {
-            if (_knownMutKw.some(m => titleLower.includes(m))) score -= 2;
+        // UUID já foi capturado pelo pollNewOrders e injetado no objeto order
+        // Como fallback, busca direto no banco (caso a venda tenha vindo de outro fluxo)
+        let linkedUUID = order._linkedPetUUID || null;
+        if (!linkedUUID) {
+          try {
+            const rows = await _db.query(
+              'SELECT pet_uuid FROM offer_accounts WHERE user_id = ? AND offer_id = ? ORDER BY id ASC LIMIT 1',
+              [_currentUser.id, offerId]
+            );
+            if (rows && rows.length > 0) linkedUUID = rows[0].pet_uuid;
+          } catch(e) {
+            adlvLog(`[${offerId}] Erro ao buscar UUID vinculado`, 'error');
+            return;
           }
-          if (msLower && titleLower.includes(msLower)) score += 2;
-          if (score > bestScore) { bestScore = score; bestPet = p; }
         }
 
-        if (!bestPet) {
-          adlvLog(`[${offerId}] Auto-registro: nenhum pet encontrado!`, 'error');
-          console.log('[ADLV] ERROR: No pet found despite account having pets');
+        // Deve ter UUID vinculado - caso contrário é erro
+        if (!linkedUUID) {
+          adlvLog(`[${offerId}] CANCELANDO: Nenhum pet vinculado a este anúncio`, 'error');
+          try {
+            await apiRequest(eldoradoCookie, '/api/orders/me/' + order.id + '/cancel', {
+              method: 'POST',
+              body: { sellerCancelationReason: 'Nenhum pet vinculado', message: '' },
+            });
+            // Limpa reserva da fila para esta order
+            if (order.id) {
+              await _db.query('DELETE FROM offer_accounts WHERE order_id = ?', [order.id]);
+            }
+          } catch(e) {
+            console.error('[ADLV] Erro ao cancelar ordem:', e);
+          }
           return;
         }
-        if (bestScore < 3) {
-          adlvLog(`[${offerId}] Auto-registro: score baixo (${bestScore}) - pets: ${account.pets.map(p => p.name).join(', ')}`, 'warn');
-          console.log('[ADLV] Score too low:', bestScore, 'Pets:', account.pets.map(p => ({ name: p.name, mut: p.mutation })));
-          return;
+
+        // Determina todas as reservas a processar (suporta multi-qty)
+        const reservations = (order._allReservations && order._allReservations.length > 0)
+          ? order._allReservations
+          : [{ pet_uuid: linkedUUID, account_username: order._rbAccount }];
+        const totalParts = reservations.length;
+
+        // Validar todos os pets ANTES de processar (evita estado inconsistente)
+        const accounts = rbLoad();
+        const resolvedPets = [];
+        for (const res of reservations) {
+          const acc = accounts.find(a =>
+            a.username === res.account_username ||
+            String(a.userID || a.username) === res.account_username);
+          if (!acc) {
+            adlvLog(`[${offerId}] CANCELANDO: Conta "${res.account_username}" não encontrada`, 'error');
+            try {
+              await apiRequest(eldoradoCookie, '/api/orders/me/' + order.id + '/cancel', {
+                method: 'POST',
+                body: { sellerCancelationReason: 'Conta não encontrada', message: '' },
+              });
+              if (order.id) {
+                // Multi-qty: apaga só a reserva inválida, libera as demais para a fila.
+                await _db.query('DELETE FROM offer_accounts WHERE order_id = ? AND pet_uuid = ? LIMIT 1', [order.id, res.pet_uuid]);
+                await _db.query('UPDATE offer_accounts SET order_id = NULL WHERE order_id = ?', [order.id]);
+              }
+            } catch(e) { console.error('[ADLV] Erro ao cancelar:', e); }
+            return;
+          }
+          const pet = (acc.pets || []).find(p => p._uid === res.pet_uuid);
+          if (!pet) {
+            adlvLog(`[${offerId}] CANCELANDO: Pet com UUID ${res.pet_uuid} não encontrado em "${res.account_username}"`, 'error');
+            try {
+              await apiRequest(eldoradoCookie, '/api/orders/me/' + order.id + '/cancel', {
+                method: 'POST',
+                body: { sellerCancelationReason: 'Pet não encontrado', message: '' },
+              });
+              if (order.id) {
+                // Multi-qty: apaga só a reserva sem pet, libera as demais (válidas) para a fila.
+                await _db.query('DELETE FROM offer_accounts WHERE order_id = ? AND pet_uuid = ? LIMIT 1', [order.id, res.pet_uuid]);
+                await _db.query('UPDATE offer_accounts SET order_id = NULL WHERE order_id = ?', [order.id]);
+              }
+            } catch(e) { console.error('[ADLV] Erro ao cancelar:', e); }
+            return;
+          }
+          resolvedPets.push({ pet, account: acc });
         }
 
-        const accKey = String(account.userID || account.username);
-        const accUsername = account.username;
-        const petName = bestPet.name;
-        const petSnapshot = JSON.parse(JSON.stringify(bestPet));
-
-        // Insere no DB
+        // Insere UM registro em rb_sales (representando a order inteira)
+        const firstPet = resolvedPets[0].pet;
+        const firstAcc = resolvedPets[0].account;
+        const firstAccKey = String(firstAcc.userID || firstAcc.username);
+        const firstAccUsername = firstAcc.username;
         await _db.query(
           'INSERT INTO rb_sales (user_id, pet_name, mutation, ms_label, generation, offer_title, offer_id, conversation_id, amount, account_username, account_key, pet_data) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)',
-          [_currentUser.id, petName, bestPet.mutation || 'None', bestPet._msLabel || '',
-           bestPet._generation || null, offerTitle, offerId, convId || null,
-           amount, accUsername || '', accKey, JSON.stringify(petSnapshot)]
+          [_currentUser.id, firstPet.name, firstPet.mutation || 'None', firstPet._msLabel || '',
+           firstPet._generation || null, offerTitle, offerId, convId || null,
+           amount, firstAccUsername || '', firstAccKey, JSON.stringify(firstPet)]
         );
 
-        // Remove pet do inventário
-        if (bestPet._uid) {
-          account.pets = account.pets.filter(p => p._uid !== bestPet._uid);
-        } else {
-          const idx = account.pets.findIndex(p => p.name === petName);
-          if (idx !== -1) account.pets.splice(idx, 1);
+        // Remove TODOS os pets vendidos do inventário e enfileira um item por unidade
+        for (let idx = 0; idx < resolvedPets.length; idx++) {
+          const { pet, account } = resolvedPets[idx];
+          const petSnapshot = JSON.parse(JSON.stringify(pet));
+          const accKey = String(account.userID || account.username);
+          const accUsername = account.username;
+
+          // Remove do inventário
+          if (pet._uid) {
+            account.pets = account.pets.filter(p => p._uid !== pet._uid);
+          } else {
+            const i = account.pets.findIndex(p => p.name === pet.name);
+            if (i !== -1) account.pets.splice(i, 1);
+          }
+
+          adlvLog(`[${offerId}] ${totalParts > 1 ? `Parte ${idx+1}/${totalParts} - ` : ''}Enfileirado: ${pet.name}`, 'info');
+          adlvQueueAdd({
+            offerId,
+            orderId:      order.id || '',
+            petName:      pet.name,
+            petUUID:      petSnapshot._uid || petSnapshot.uuid || '',
+            accountKey:   accKey,
+            accUsername,
+            petSnapshot,
+            convId:       order.talkJsConversationId || '',
+            buyerUserId:  order.buyerUserId || order.buyer?.id || '',
+            msgs:         adlvGetMessages(),
+            totalParts,
+            partIndex:    idx + 1,
+          });
         }
         rbSave(accounts);
         await rbLoadSalesGross();
-
-        // Enfileira
-        console.log('[ADLV] ENQUEUEING:', { offerId, petName, score: bestScore, accountKey: accKey, convId: order.talkJsConversationId });
-        adlvQueueAdd({
-          offerId,
-          orderId:      order.id || '',  // ← ID do pedido (necessário para /deliver e /cancel)
-          petName,
-          petUUID:      petSnapshot._uid || petSnapshot.uuid || '',
-          accountKey:   accKey,
-          accUsername,
-          petSnapshot,
-          convId:       order.talkJsConversationId || '',
-          buyerUserId:  order.buyerUserId || order.buyer?.id || '',
-          msgs:         adlvGetMessages(),
-        });
-        adlvLog(`[${offerId}] ✅ Auto-registrado: ${petName} (score=${bestScore})`, 'success');
+        adlvLog(`[${offerId}] ✅ Auto-registrado: ${totalParts} ${totalParts > 1 ? 'unidades' : 'unidade'}`, 'success');
       } catch(e) {
         adlvLog(`[${order?.offerId}] ❌ Erro no auto-registro: ${e.message}`, 'error');
         console.error('[ADLV] Exception:', e);
@@ -9912,11 +9998,13 @@ Don't worry — your remaining items may come from a different account, but your
           if (offerIds.length && _currentUser) {
             const placeholders = offerIds.map(() => '?').join(',');
             const params = [_currentUser.id, ...offerIds, _currentUser.id, ...offerIds];
+            // ORDER BY src first so queue rows take priority over historical sale rows
+            // (their auto-increment ids are from different tables and not comparable).
             const rows = await _db.query(
-              `SELECT offer_id, account_username, id FROM offer_accounts WHERE user_id = ? AND offer_id IN (${placeholders})
+              `SELECT offer_id, account_username, id, 'queue' AS src FROM offer_accounts WHERE user_id = ? AND offer_id IN (${placeholders})
                UNION ALL
-               SELECT offer_id, account_username, id FROM rb_sales WHERE user_id = ? AND offer_id IN (${placeholders})
-               ORDER BY id ASC`,
+               SELECT offer_id, account_username, id, 'sale'  AS src FROM rb_sales       WHERE user_id = ? AND offer_id IN (${placeholders})
+               ORDER BY src ASC, id ASC`,
               params
             );
             const saleMap = {};
@@ -10249,7 +10337,7 @@ Don't worry — your remaining items may come from a different account, but your
               `SELECT account_username, id, 'queue' AS src FROM offer_accounts WHERE user_id = ? AND offer_id = ?
                UNION ALL
                SELECT account_username, id, 'sale'  AS src FROM rb_sales       WHERE user_id = ? AND offer_id = ?
-               ORDER BY id ASC`,
+               ORDER BY src ASC, id ASC`,
               [_currentUser.id, order.offerId, _currentUser.id, order.offerId]
             ).then(rows => {
               const queueRows = rows.filter(r => r.src === 'queue');
@@ -10594,8 +10682,7 @@ Don't worry — your remaining items may come from a different account, but your
         }
         // Remove UUID do DB ao marcar como delivered manualmente
         try {
-          const { ipcRenderer } = require('electron');
-          await ipcRenderer.invoke('db-run', 'DELETE FROM rb_sales WHERE offer_id = ?', [chatSelectedOrder.id]);
+          await _db.query('DELETE FROM rb_sales WHERE offer_id = ?', [chatSelectedOrder.id]);
           await rbLoadSalesGross();
         } catch(e) {}
         setTimeout(() => { if (btn) btn.style.display = 'none'; }, 1500);
@@ -12353,7 +12440,7 @@ Don't worry — your remaining items may come from a different account, but your
         eldoradoCookie = cookie;
         localStorage.setItem('eldorado_cookie', cookie);
         showAccountConnected(json);
-        startNtfPolling();
+        startNtfPolling(); _startSessionRefreshLoop();
         preloadAllData();
         input.value = '';
       } catch (e) {
@@ -12384,7 +12471,7 @@ Don't worry — your remaining items may come from a different account, but your
         try {
           const { json } = await fetchEldoradoProfile(cookie);
           showAccountConnected(json);
-          startNtfPolling();
+          startNtfPolling(); _startSessionRefreshLoop();
           if (!alreadyConnected) preloadAllData();
         } catch {
           // Only wipe the cookie on genuine auth errors — transient failures
@@ -12431,7 +12518,7 @@ Don't worry — your remaining items may come from a different account, but your
           if (cookie) {
             eldoradoCookie = cookie;
             localStorage.setItem('eldorado_cookie', cookie);
-            fetchEldoradoProfile(cookie).then(({ json }) => { showAccountConnected(json); startNtfPolling(); preloadAllData(); }).catch(() => {});
+            fetchEldoradoProfile(cookie).then(({ json }) => { showAccountConnected(json); startNtfPolling(); _startSessionRefreshLoop(); preloadAllData(); }).catch(() => {});
           }
         });
       } catch(e) {}
@@ -12526,18 +12613,49 @@ Don't worry — your remaining items may come from a different account, but your
           for (const o of newOrders) {
             showOrderNotification(o);
             triggerAutoMessage(o);
-            // Pop the oldest N rows from the delivery queue (N = order quantity).
-            // The account that listed first delivers first.
-            if (_currentUser && o.offerId) {
+            // Reserve oldest available rows from the delivery queue (N = order quantity).
+            // Mark them with order_id so they're locked to this specific order.
+            // The actual deletion happens only on delivery confirmation OR cancellation due to pet not found.
+            if (_currentUser && o.offerId && o.id) {
               const qty = Math.max(1, parseInt(o.quantity ?? o.offerQuantity ?? 1, 10) || 1);
-              _db.query(
-                'DELETE FROM offer_accounts WHERE user_id=? AND offer_id=? ORDER BY id ASC LIMIT ?',
-                [_currentUser.id, o.offerId, qty]
-              ).catch(() => {});
+              try {
+                // First check if this order_id is already linked (re-poll case)
+                const existing = await _db.query(
+                  'SELECT id, pet_uuid, account_username FROM offer_accounts WHERE order_id = ? ORDER BY id ASC',
+                  [o.id]
+                );
+                let reservedRows;
+                if (existing && existing.length > 0) {
+                  reservedRows = existing;
+                } else {
+                  // Atomic claim: SELECT+UPDATE was racy — two concurrent pollers (or
+                  // multi-device users) could pick the same rows. Single UPDATE with
+                  // WHERE order_id IS NULL ensures only one wins per row.
+                  await _db.query(
+                    `UPDATE offer_accounts SET order_id = ? WHERE user_id=? AND offer_id=? AND order_id IS NULL ORDER BY id ASC LIMIT ${qty}`,
+                    [o.id, _currentUser.id, o.offerId]
+                  );
+                  reservedRows = await _db.query(
+                    'SELECT id, pet_uuid, account_username FROM offer_accounts WHERE order_id = ? ORDER BY id ASC',
+                    [o.id]
+                  );
+                }
+                if (reservedRows && reservedRows.length > 0) {
+                  // Inject pet_uuid and account_username into the order object so adlvAutoRegister can access them
+                  o._linkedPetUUID = reservedRows[0].pet_uuid;
+                  o._rbAccount = reservedRows[0].account_username;
+                  // For multi-qty orders: pass all reservations so adlvAutoRegister enqueues one item per unit
+                  o._allReservations = reservedRows.map(r => ({ pet_uuid: r.pet_uuid, account_username: r.account_username }));
+                }
+              } catch(e) { console.error('[POLL] Error reserving offer_accounts:', e); }
             }
           }
           // Inject into chat list without requiring manual refresh
           if (chatOrders.length > 0) chatInjectNewOrders(newOrders);
+          // Trigger Auto Delivery for each new order with the captured UUID
+          for (const o of newOrders) {
+            adlvAutoRegister(o);
+          }
         }
 
         // Dispute detection — check all recent orders for new disputes
@@ -12551,8 +12669,87 @@ Don't worry — your remaining items may come from a different account, but your
             }
           }
         }
-      } catch(e) {}
+      } catch(e) {
+        // Auth errors deserve attention — silent failure leaves the user wondering
+        // why orders stop appearing. Other errors (network blips) stay quiet.
+        const msg = String(e?.message || '');
+        if (msg.includes('401') || msg.includes('403') || /unauthor/i.test(msg)) {
+          console.error('[POLL] Auth error in pollNewOrders:', msg);
+          adlvLog(`Polling falhou: sessão Eldorado expirou (${msg.slice(0,80)}). Tentando reconectar...`, 'error');
+          _lastConnectedCookie = null;
+          _scheduleAutoReconnect();
+        }
+      }
     }
+
+    let _autoReconnectTimer = null;
+    function _scheduleAutoReconnect() {
+      if (_autoReconnectTimer) return;
+      _autoReconnectTimer = setTimeout(async () => {
+        _autoReconnectTimer = null;
+        if (eldoradoCookie && !_lastConnectedCookie) {
+          // Try with stored cookie first
+          _lastConnectedCookie = null;
+          await connectWithCookieStr(eldoradoCookie);
+        }
+        // Also ask extension for fresh cookie
+        try {
+          const { ipcRenderer } = require('electron');
+          ipcRenderer.send('request-ext-cookie');
+        } catch(e) {}
+      }, 30000);
+    }
+
+    // ── Session auto-refresh ─────────────────────────────────────────────────
+    function _jwtSecondsLeft(cookieStr) {
+      try {
+        const m = (cookieStr || '').match(/__Host-EldoradoIdToken=([^;]+)/);
+        if (!m) return 0;
+        const payload = m[1].split('.')[1];
+        if (!payload) return 0;
+        const pad = payload + '='.repeat((4 - payload.length % 4) % 4);
+        const { exp } = JSON.parse(atob(pad.replace(/-/g,'+').replace(/_/g,'/')));
+        return exp ? Math.max(0, exp - Math.floor(Date.now() / 1000)) : 0;
+      } catch { return 0; }
+    }
+
+    let _sessionRefreshBusy = false;
+    async function _eldoradoRefreshSession() {
+      if (_sessionRefreshBusy || !eldoradoCookie) return;
+      _sessionRefreshBusy = true;
+      try {
+        // POST /api/authentication/refreshTokens — uses refresh token cookie to get new tokens.
+        // The BrowserWindow session handles Set-Cookie automatically; our existing cookie
+        // capture in main.js will detect the change and send ext-cookie to renderer.
+        await apiRequest(eldoradoCookie, '/api/authentication/refreshTokens', { method: 'POST' });
+        console.log('[SESSION] Token refreshed via refreshTokens endpoint');
+      } catch(e) {
+        // If refreshTokens fails, try claims sync as fallback
+        try {
+          await apiRequest(eldoradoCookie, '/api/authentication/claims', {});
+          console.log('[SESSION] Token synced via claims endpoint');
+        } catch(e2) {
+          console.warn('[SESSION] Refresh failed:', e2.message);
+        }
+      } finally {
+        _sessionRefreshBusy = false;
+      }
+    }
+
+    let _sessionRefreshInterval = null;
+    function _startSessionRefreshLoop() {
+      if (_sessionRefreshInterval) return;
+      _sessionRefreshInterval = setInterval(async () => {
+        if (!eldoradoCookie) return;
+        const secsLeft = _jwtSecondsLeft(eldoradoCookie);
+        // Refresh if expiring in less than 5 minutes OR token already expired
+        if (secsLeft === 0 || secsLeft < 300) {
+          console.log(`[SESSION] JWT expires in ${secsLeft}s — refreshing`);
+          await _eldoradoRefreshSession();
+        }
+      }, 60 * 1000);
+    }
+    // ─────────────────────────────────────────────────────────────────────────
 
     function startNtfPolling() {
       if (ntfPollInterval) clearInterval(ntfPollInterval);
@@ -12621,13 +12818,13 @@ Don't worry — your remaining items may come from a different account, but your
         renderListings();
 
         // Sync offer_accounts queue: delete rows for offers no longer active.
-        // Catches listings deleted on the website, sold-out, expired, etc.
+        // PRESERVA reservas ativas (order_id IS NOT NULL) — entregas em voo não podem perder a vinculação.
         if (_currentUser && all.length > 0) {
           const activeIds = all.map(o => o.id).filter(Boolean);
           if (activeIds.length > 0) {
             const placeholders = activeIds.map(() => '?').join(',');
             _db.query(
-              `DELETE FROM offer_accounts WHERE user_id=? AND offer_id NOT IN (${placeholders})`,
+              `DELETE FROM offer_accounts WHERE user_id=? AND order_id IS NULL AND offer_id NOT IN (${placeholders})`,
               [_currentUser.id, ...activeIds]
             ).catch(() => {});
           }
@@ -13475,7 +13672,11 @@ Don't worry — your remaining items may come from a different account, but your
               _msRange: msRange,
               _msValue: msValue,
               _owner: player.username || '',
-              _uid: Math.random().toString(36).slice(2),
+              // Preserva o UUID Roblox do JSON — sem isso, alPets gerava um id aleatório
+              // que ia parar em offer_accounts.pet_uuid e nunca casava com account.pets[]._uid
+              // (que vem do mesmo JSON via rbDoImportData e usa a.uuid). Resultado prévio:
+              // pedidos cancelavam com "Pet com UUID X não encontrado" usando IDs base36 inventados.
+              _uid: a.uuid || Math.random().toString(36).slice(2),
               _selected: true,
               _price: '0',
               _deliv: 'Minute20',
@@ -14242,11 +14443,12 @@ Don't worry — your remaining items may come from a different account, but your
     async function alListOne(pet, myOffers = []) {
       const price = parseFloat(pet._price) || 0;
 
-      // Only reuse an existing listing when its stock is depleted (qty = 0).
-      // If it still has unsold stock, create a separate new listing instead.
-      const existing = myOffers.find(o => alMatchOffer(o, pet) && (o.quantity ?? 1) === 0);
+      // Reuse any existing listing with matching characteristics.
+      // Stack by incrementing quantity (preserves existing stock).
+      const existing = myOffers.find(o => alMatchOffer(o, pet));
       if (existing) {
-        const newQty = pet._qty || 1;
+        const addQty = pet._qty || 1;
+        const newQty = (existing.quantity ?? 0) + addQty;
 
         // Build augmentedGame from existing offer (same pattern as lstSaveEdit)
         const _tEnvs = existing.tradeEnvironmentValues || [];
@@ -14286,8 +14488,8 @@ Don't worry — your remaining items may come from a different account, but your
           const stackQty = pet._qty || 1;
           for (let i = 0; i < stackQty; i++) {
             _db.query(
-              'INSERT INTO offer_accounts (user_id, offer_id, account_username) VALUES (?,?,?)',
-              [_currentUser.id, existing.id, pet._owner]
+              'INSERT INTO offer_accounts (user_id, offer_id, account_username, pet_uuid) VALUES (?,?,?,?)',
+              [_currentUser.id, existing.id, pet._owner, pet._uid || null]
             ).catch(() => {});
           }
         }
@@ -14338,14 +14540,14 @@ Don't worry — your remaining items may come from a different account, but your
 
       console.log('[list] POST body for', pet.name, JSON.stringify(body.augmentedGame));
       const listResp = await apiMutate(eldoradoCookie, '/api/v1/item-management/me/offers/item', 'POST', body);
-      // Save offer_id → account_username mapping for chat display.
+      // Save offer_id → account_username + pet_uuid mapping for Auto Delivery.
       // Insert one row per listed unit so the FIFO queue matches the offer's quantity.
       const newOfferId = listResp.json?.id;
       if (newOfferId && pet._owner && _currentUser) {
         for (let i = 0; i < listQty; i++) {
           _db.query(
-            'INSERT INTO offer_accounts (user_id, offer_id, account_username) VALUES (?,?,?)',
-            [_currentUser.id, newOfferId, pet._owner]
+            'INSERT INTO offer_accounts (user_id, offer_id, account_username, pet_uuid) VALUES (?,?,?,?)',
+            [_currentUser.id, newOfferId, pet._owner, pet._uid || null]
           ).catch(() => {});
         }
       }
@@ -16200,7 +16402,9 @@ Don't worry — your remaining items may come from a different account, but your
     const _adlvQueue = [];
 
     function adlvQueueAdd(item) {
-      if (_adlvQueue.find(i => i.offerId === item.offerId)) return;
+      // Dedup by orderId + petUUID (allows multi-qty: same orderId, different pets)
+      const dupKey = (item.orderId || item.offerId) + '::' + (item.petUUID || '');
+      if (_adlvQueue.find(i => ((i.orderId || i.offerId) + '::' + (i.petUUID || '')) === dupKey)) return;
       _adlvQueue.push({ ...item, status: 'awaiting_nick', nick: null, createdAt: Date.now() });
       adlvQueueRender();
       adlvQueueProcess(item.offerId);
@@ -16225,7 +16429,24 @@ Don't worry — your remaining items may come from a different account, but your
 
       // 1. Envia greeting + pedido de nick
       if (item.status === 'awaiting_nick') {
-        await adlvSendMsg(item.convId, msgs.msgGreeting);
+        // Se convId vazio, tenta buscar da API antes de enviar
+        if (!item.convId && item.orderId && eldoradoCookie) {
+          try {
+            const r = await apiRequest(eldoradoCookie, `/api/orders/me/seller/orders?pageSize=50&isAscendingDateOrder=false`);
+            const found = (r.json?.results || []).find(o => o.id === item.orderId);
+            if (found?.talkJsConversationId) item.convId = found.talkJsConversationId;
+          } catch(e) {}
+        }
+        const sent = await adlvSendMsg(item.convId, msgs.msgGreeting);
+        if (!sent) {
+          // Não avança status: o item permanece em 'awaiting_nick' e pode ser re-tentado
+          // pelo próximo dispatch (TalkJS reconectado, sessão renovada, etc.). Sem este
+          // guard, o status virava 'nick_sent' sem o comprador receber o pedido de nick
+          // e o item ficava preso esperando uma resposta que nunca chegava.
+          adlvLog(`[${item.offerId}] Greeting falhou — tentando novamente em 15s`, 'warn');
+          setTimeout(() => adlvQueueProcess(offerId), 15000);
+          return;
+        }
         adlvQueueSetStatus(offerId, 'nick_sent');
         adlvLog(`[${item.offerId}] Greeting enviado ao comprador`, 'info');
 
@@ -16244,11 +16465,15 @@ Don't worry — your remaining items may come from a different account, but your
       const conv = window.talkjsSession.conversation(convId);
       if (!conv) return;
 
-      // Subscreve, pega o snapshot, processa última mensagem do comprador, unsubscribe
+      // Subscreve, pega o snapshot, processa última mensagem do comprador, unsubscribe.
+      // Antes: o setTimeout(resolve, 3000) podia disparar enquanto o adlvHandleBuyerMessage
+      // ainda estava in-flight, retornando antes do processamento concluir. Agora rastreamos
+      // a promise de processamento e a aguardamos explicitamente após o snapshot chegar.
       let unsub = null;
-      const done = new Promise((resolve) => {
+      let processingPromise = null;
+      const snapshotReceived = new Promise((resolve) => {
         let resolved = false;
-        unsub = conv.subscribeMessages(async (snapshot) => {
+        unsub = conv.subscribeMessages((snapshot) => {
           if (resolved) return;
           resolved = true;
           try {
@@ -16258,15 +16483,19 @@ Don't worry — your remaining items may come from a different account, but your
             if (msgs.length === 0) return resolve();
             const last = msgs[msgs.length - 1];
             adlvLog(`[adlv] Reprocessando mensagem pré-greeting: "${last.body}"`, 'info');
-            await adlvHandleBuyerMessage(convId, last.body, last.createdAt || Date.now());
+            processingPromise = adlvHandleBuyerMessage(convId, last.body, last.createdAt || Date.now())
+              .catch(e => adlvLog(`[adlv] Erro ao reprocessar: ${e.message}`, 'warn'));
           } catch(e) {
             adlvLog(`[adlv] Erro ao reprocessar: ${e.message}`, 'warn');
           }
           resolve();
         });
-        setTimeout(resolve, 3000); // timeout 3s
+        setTimeout(resolve, 3000); // timeout 3s para snapshot inicial
       });
-      await done;
+      await snapshotReceived;
+      if (processingPromise) {
+        try { await processingPromise; } catch(e) {}
+      }
       try { unsub && unsub(); } catch(e) {}
     }
 
@@ -16309,6 +16538,10 @@ Don't worry — your remaining items may come from a different account, but your
 
     // Rastreia última mensagem processada por convId para evitar re-disparo
     const _adlvLastProcessed = {};
+    // Guard de in-flight: garante que apenas um handler async roda por convId,
+    // protegendo contra re-entrada (TalkJS unreads.onChange dispara várias vezes
+    // enquanto resolveRoblox/sendMsg ainda estão pendentes).
+    const _adlvProcessing = new Set();
 
     // Chamado quando o comprador envia mensagem numa conversa monitorada
     // Extrai um username de Roblox de uma frase livre
@@ -16376,8 +16609,14 @@ Don't worry — your remaining items may come from a different account, but your
     async function adlvHandleBuyerMessage(convId, text, msgTimestamp) {
       // Ignora mensagem já processada (unreads.onChange pode disparar múltiplas vezes)
       if (msgTimestamp && _adlvLastProcessed[convId] >= msgTimestamp) return;
+      // In-flight guard: protege contra dispatchs concorrentes da mesma conv enquanto
+      // estamos esperando uma chamada async (resolveRoblox, sendMsg).
+      if (_adlvProcessing.has(convId)) return;
+      _adlvProcessing.add(convId);
+      const _prevProcessedTs = _adlvLastProcessed[convId];
       if (msgTimestamp) _adlvLastProcessed[convId] = msgTimestamp;
 
+      try {
       const item = _adlvQueue.find(i => i.convId === convId &&
         ['nick_sent', 'nick_confirming'].includes(i.status));
       if (!item) return;
@@ -16426,6 +16665,15 @@ Don't worry — your remaining items may come from a different account, but your
             'Please reply with *1* (Yes) or *2* (No) to confirm your username.');
           adlvLog(`[${item.offerId}] Resposta inválida na confirmação: "${trimmed}"`, 'warn');
         }
+      }
+      } catch(e) {
+        // Rollback do timestamp para que a próxima tentativa reprocessse a mesma mensagem
+        // (sem isso, o guard de cima descartaria silenciosamente a mensagem perdida).
+        _adlvLastProcessed[convId] = _prevProcessedTs;
+        adlvLog(`[adlv] Erro ao processar mensagem do comprador: ${e.message}`, 'error');
+        console.error('[ADLV] adlvHandleBuyerMessage error:', e);
+      } finally {
+        _adlvProcessing.delete(convId);
       }
     }
 
@@ -16479,14 +16727,16 @@ Don't worry — your remaining items may come from a different account, but your
     }
 
     async function adlvSendMsg(convId, message) {
-      if (!convId || !message) return;
+      if (!convId || !message) return false;
       try {
         if (!window.talkjsSession) await initTalkJS();
-        if (!window.talkjsSession) return;
+        if (!window.talkjsSession) return false;
         const conv = window.talkjsSession.conversation(convId);
         await conv.send(message);
+        return true;
       } catch(e) {
         adlvLog(`Erro ao enviar mensagem TalkJS: ${e.message}`, 'error');
+        return false;
       }
     }
 
@@ -16512,6 +16762,13 @@ Don't worry — your remaining items may come from a different account, but your
           adlvQueueSetStatus(data.offerId, 'done');
           adlvSaveDeliveryLog(data.offerId, item, 'success', null, null);
 
+          // Remove a reserva da fila offer_accounts (entrega concluída)
+          if (item?.orderId && _currentUser) {
+            try {
+              await _db.query('DELETE FROM offer_accounts WHERE order_id = ?', [item.orderId]);
+            } catch(e) { console.error('[ADLV] Erro ao remover reserva:', e); }
+          }
+
           // Rename video with buyer name and timestamp
           try {
             const buyerNick = item.nick || 'unknown';
@@ -16526,9 +16783,9 @@ Don't worry — your remaining items may come from a different account, but your
             const msgs = adlvGetMessages();
             await adlvSendMsg(item.convId, msgs.msgThankyou);
           }
-          // Se pedido tem múltiplas partes, verifica se ainda há pendentes
+          // Se pedido tem múltiplas partes, verifica se ainda há pendentes (usa orderId para evitar misturar orders diferentes)
           const siblings = _adlvQueue.filter(i =>
-            i.offerId === data.offerId && i.status !== 'done'
+            i.orderId === item.orderId && i.status !== 'done'
           );
           if (siblings.length > 0 && item.totalParts > 1) {
             const delivered = item.totalParts - siblings.length;
@@ -16545,18 +16802,23 @@ Don't worry — your remaining items may come from a different account, but your
             return;
           }
 
-          // Marca como entregue no Eldorado (usa orderId, não offerId)
-          const orderIdForApi = item.orderId || data.offerId;
-          try {
-            await apiRequest(eldoradoCookie, '/api/orders/me/' + orderIdForApi + '/deliver', { method: 'PUT' });
-            adlvLog(`[${data.offerId}] Marcado como entregue no Eldorado`, 'success');
-            const sideItem = document.querySelector(`.chat-order-item[data-order-id="${orderIdForApi}"]`);
-            if (sideItem) {
-              const badge = sideItem.querySelector('.chat-status-badge');
-              if (badge) { badge.className = 'chat-status-badge ' + chatStatusBadge('Delivered'); badge.textContent = 'Delivered'; }
+          // Marca como entregue no Eldorado (usa orderId — NÃO usar offerId como fallback:
+          // /api/orders/me/{offerId}/deliver retorna 404 porque o endpoint espera order id).
+          const orderIdForApi = item.orderId;
+          if (!orderIdForApi) {
+            adlvLog(`[${data.offerId}] Não foi possível marcar como entregue: orderId ausente no item`, 'error');
+          } else {
+            try {
+              await apiRequest(eldoradoCookie, '/api/orders/me/' + orderIdForApi + '/deliver', { method: 'PUT' });
+              adlvLog(`[${data.offerId}] Marcado como entregue no Eldorado`, 'success');
+              const sideItem = document.querySelector(`.chat-order-item[data-order-id="${orderIdForApi}"]`);
+              if (sideItem) {
+                const badge = sideItem.querySelector('.chat-status-badge');
+                if (badge) { badge.className = 'chat-status-badge ' + chatStatusBadge('Delivered'); badge.textContent = 'Delivered'; }
+              }
+            } catch(e) {
+              adlvLog(`[${data.offerId}] Falha ao marcar entregue no Eldorado: ${e.message}`, 'error');
             }
-          } catch(e) {
-            adlvLog(`[${data.offerId}] Falha ao marcar entregue no Eldorado: ${e.message}`, 'error');
           }
           // Fecha Roblox após entrega bem-sucedida (8 segundos após confirmação para gravação)
           try {
@@ -16586,6 +16848,13 @@ Don't worry — your remaining items may come from a different account, but your
             adlvQueueSetStatus(data.offerId, 'failed');
             adlvSaveDeliveryLog(data.offerId, item, 'failed', 'offline_timeout', 'Buyer offline for 20+ minutes');
             adlvRestockListing(item);
+
+            // Libera a reserva da fila (pet voltou ao inventário, disponível para outras vendas)
+            if (item?.orderId && _currentUser) {
+              try {
+                await _db.query('UPDATE offer_accounts SET order_id = NULL WHERE order_id = ?', [item.orderId]);
+              } catch(e) { console.error('[ADLV] Erro ao liberar reserva:', e); }
+            }
 
             // Notifica comprador
             if (item?.convId) {
@@ -16618,7 +16887,7 @@ Don't worry — your remaining items may come from a different account, but your
               }
 
               // Remove venda do DB (cancela)
-              await ipcRenderer.invoke('db-run',
+              await _db.query(
                 'DELETE FROM rb_sales WHERE offer_id = ?',
                 [data.offerId]
               );
@@ -16688,6 +16957,19 @@ Don't worry — your remaining items may come from a different account, but your
           adlvSaveDeliveryLog(data.offerId, item, 'failed', reason, label);
           if (data.status !== 'item_not_found') adlvRestockListing(item);
 
+          // Libera/remove reserva da fila offer_accounts conforme o caso
+          if (item?.orderId && _currentUser) {
+            try {
+              if (data.status === 'item_not_found') {
+                // Pet não está mais no inventário — remove reserva permanentemente
+                await _db.query('DELETE FROM offer_accounts WHERE order_id = ?', [item.orderId]);
+              } else {
+                // Trade falhou mas pet voltou ao inventário — libera para próxima venda
+                await _db.query('UPDATE offer_accounts SET order_id = NULL WHERE order_id = ?', [item.orderId]);
+              }
+            } catch(e) { console.error('[ADLV] Erro ao processar reserva:', e); }
+          }
+
           const isItemNotFound = data.status === 'item_not_found';
 
           // Restaura pet ao inventário (para timeout, cancelled, etc.)
@@ -16749,7 +17031,7 @@ Don't worry — your remaining items may come from a different account, but your
 
           // Remove venda do DB — permite que a próxima ordem para esse offerId seja registrada
           try {
-            await ipcRenderer.invoke('db-run',
+            await _db.query(
               'DELETE FROM rb_sales WHERE offer_id = ?',
               [data.offerId]
             );
@@ -16847,13 +17129,46 @@ Don't worry — your remaining items may come from a different account, but your
     setInterval(adlvCheckLicense, 60 * 1000);
 
     // ─── Toggle ativo/inativo ─────────────────────────────────────────────
-    // Sempre inicia DESATIVADO ao abrir o app (não persiste entre sessões)
+    // Estado local por dispositivo (não sincroniza com localStorage)
     let _adlvEnabled = false;
 
     function adlvToggleEnabled() {
       _adlvEnabled = !_adlvEnabled;
       adlvUpdateToggleUI();
       adlvLog(`Auto Delivery ${_adlvEnabled ? 'ativado' : 'desativado'}`, _adlvEnabled ? 'success' : 'warn');
+      if (_adlvEnabled) _startChatTracking();
+
+      if (!_adlvEnabled) {
+        // Cancela itens em-vôo (exceto trade já em andamento, que finaliza naturalmente):
+        // restaura pets ao inventário e libera reservas. Sem isso, itens ficavam órfãos —
+        // pet removido do inventário, fila bloqueada, e nada nunca completava porque
+        // adlvDispatchNextReady está gated por _adlvEnabled.
+        const inFlight = _adlvQueue.filter(i => !['done','failed','trading'].includes(i.status));
+        if (inFlight.length === 0) return;
+
+        const accounts = rbLoad();
+        let needsSave = false;
+        for (const item of inFlight) {
+          adlvQueueSetStatus(item.offerId, 'failed');
+          if (item.petSnapshot && item.accountKey) {
+            const acc = accounts.find(a => String(a.userID || a.username) === String(item.accountKey));
+            if (acc) {
+              acc.pets = acc.pets || [];
+              const uid = item.petSnapshot._uid;
+              if (!uid || !acc.pets.some(p => p._uid && p._uid === uid)) {
+                acc.pets.push(item.petSnapshot);
+                needsSave = true;
+              }
+            }
+          }
+          if (item.orderId && _currentUser) {
+            _db.query('UPDATE offer_accounts SET order_id = NULL WHERE order_id = ?', [item.orderId])
+              .catch(e => console.error('[ADLV] Erro ao liberar reserva no toggle off:', e));
+          }
+        }
+        if (needsSave) { rbSave(accounts); rbRender(); }
+        adlvLog(`${inFlight.length} item(s) em-vôo cancelado(s) — pets restaurados, reservas liberadas`, 'warn');
+      }
     }
 
     function adlvUpdateToggleUI() {
@@ -17068,7 +17383,11 @@ Don't worry — your remaining items may come from a different account, but your
           [_currentUser.id, offerId, item?.petName || '—', item?.nick || '—',
            status, reason || null, label || null, item?.accUsername || null]);
         adlvLoadHistory();
-      } catch(e) { /* silencioso */ }
+      } catch(e) {
+        // Don't surface in adlvLog (would loop on storage failure), but make it
+        // visible in the console so a misconfigured DB doesn't disappear silently.
+        console.error('[ADLV] Failed to persist delivery log:', e);
+      }
     }
 
     async function adlvRestockListing(item) {
@@ -17215,7 +17534,7 @@ Don't worry — your remaining items may come from a different account, but your
         ipcRenderer.send('adlv-set-pending', _adlvPendingTrade);
       } catch(e) {}
 
-      adlvLog(`Trade configurada: ${petName} → ${username}*`, 'success');
+      adlvLog(`Trade configurada: ${petName} → ${nick}*`, 'success');
 
       // Lança automaticamente a conta Roblox em modo Script
       if (accountKey) {

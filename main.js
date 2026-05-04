@@ -145,6 +145,7 @@ let   _pairCode  = _genCode();
 let   _extSocket = null;
 let   _wss       = null;
 const _pendingExtRequests = new Map(); // id → { resolve, timer }
+let   _lastKnownCookie = null; // tracks last cookie sent from eldorado-api session
 
 function _genCode() {
   return crypto.randomBytes(10).toString('hex').toUpperCase();
@@ -205,6 +206,21 @@ function startExtBridge() {
 }
 
 ipcMain.handle('get-ext-code', () => _pairCode);
+
+ipcMain.on('request-ext-cookie', () => {
+  if (_extSocket && _extSocket.readyState === 1) {
+    try { _extSocket.send(JSON.stringify({ type: 'get-cookie' })); } catch(e) {}
+  } else if (mainWindow && !mainWindow.isDestroyed()) {
+    // Extension not connected — try reconnecting with session cookies from API window
+    if (_eldoApiWin && !_eldoApiWin.isDestroyed()) {
+      _eldoApiWin.webContents.session.cookies.get({ url: 'https://www.eldorado.gg' })
+        .then(cookies => {
+          const cookieStr = cookies.map(c => `${c.name}=${c.value}`).join('; ');
+          if (cookieStr) mainWindow.webContents.send('ext-cookie-response', cookieStr);
+        }).catch(() => {});
+    }
+  }
+});
 // ─────────────────────────────────────────────────────────────────────────────
 
 // ── Multi-Roblox singleton bypass ────────────────────────────────────────────
@@ -289,6 +305,9 @@ function createWindow() {
 
 mainWindow.once('ready-to-show', () => {
     mainWindow.show();
+    if (process.env.OPEN_DEVTOOLS === '1' || !app.isPackaged) {
+      mainWindow.webContents.openDevTools({ mode: 'detach' });
+    }
     // Auto-check on startup (slight delay so UI is settled)
     if (app.isPackaged) {
       setTimeout(async () => {
@@ -1410,6 +1429,19 @@ ipcMain.handle('eldorado-api', async (_e, { path, method, cookie, body }) => {
       _eldoApiWinReady = false;
       return { ok: false, statusCode: result.status, error: 'HTTP' + result.status };
     }
+    // Capture any Set-Cookie the session received and forward to renderer
+    try {
+      const ses = _eldoApiWin.webContents.session;
+      const sessionCookies = await ses.cookies.get({ url: 'https://www.eldorado.gg' });
+      const newCookieStr = sessionCookies.map(c => `${c.name}=${c.value}`).join('; ');
+      if (newCookieStr && newCookieStr !== _lastKnownCookie) {
+        _lastKnownCookie = newCookieStr;
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.webContents.send('ext-cookie', newCookieStr);
+        }
+      }
+    } catch(e) { /* non-critical */ }
+
     try { return { ok: true, statusCode: result.status, json: JSON.parse(result.body) }; }
     catch { return { ok: result.status >= 200 && result.status < 300, statusCode: result.status, json: null }; }
   } catch(e) {

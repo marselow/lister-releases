@@ -1,6 +1,6 @@
 {
   "name": "meowl-lister",
-  "version": "1.9.7",
+  "version": "1.9.8",
   "description": "Meowl Lister - Listing Tool by Marcelo",
   "main": "main.js",
   "scripts": {
