@@ -2,6 +2,8 @@ const { app, BrowserWindow, ipcMain, session, Notification, dialog, shell, net }
 
 app.commandLine.appendSwitch('disable-features', 'BluetoothSerial,WebBluetooth');
 app.commandLine.appendSwitch('disable-bluetooth');
+// Remove sinais de automação detectados pelo Cloudflare/Google
+app.commandLine.appendSwitch('disable-blink-features', 'AutomationControlled');
 const path   = require('path');
 const crypto = require('crypto');
 const https  = require('https');
@@ -1044,6 +1046,22 @@ mainWindow.once('ready-to-show', () => {
         contextIsolation: true,
         partition: 'persist:eldorado-login-' + Date.now() // sessão isolada sem cookies prévios
       }
+    });
+
+    // Google OAuth e Cloudflare bloqueiam Electron — substitui user agent por Chrome real
+    loginWin.webContents.setUserAgent(
+      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
+    );
+
+    // Remove navigator.webdriver antes de cada navegação (Cloudflare checa isso)
+    loginWin.webContents.on('did-start-navigation', () => {
+      loginWin.webContents.executeJavaScript(`
+        try {
+          Object.defineProperty(navigator, 'webdriver', { get: () => undefined, configurable: true });
+          Object.defineProperty(navigator, 'languages', { get: () => ['en-US', 'en'], configurable: true });
+          Object.defineProperty(navigator, 'plugins', { get: () => [1, 2, 3], configurable: true });
+        } catch(e) {}
+      `).catch(() => {});
     });
 
     // Gera parâmetros PKCE para o OAuth flow do Eldorado

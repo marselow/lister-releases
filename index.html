@@ -3752,7 +3752,7 @@
           <button class="auth-btn" onclick="authDoRegister()" data-i18n="auth.btn.register">Criar Conta</button>
         </div>
       </div>
-      <div style="text-align:center;margin-top:16px;font-size:11px;color:#2a3a52">v1.9.8 · Meowl Lister</div>
+      <div style="text-align:center;margin-top:16px;font-size:11px;color:#2a3a52">v1.9.9 · Meowl Lister</div>
     </div>
   </div>
 
@@ -3968,7 +3968,7 @@
             <span class="conn-amount" id="conn-balance">—</span>
           </div>
 
-          <div class="sidebar-version">v1.9.8</div>
+          <div class="sidebar-version">v1.9.9</div>
         </div>
 
       </div>
@@ -5425,7 +5425,7 @@ WHAT YOU WILL RECEIVE:
               <!-- Atualizações -->
               <div class="cfg-card">
                 <div class="cfg-card-title" data-i18n="cfg.updates">🔄 Updates</div>
-                <p class="cfg-desc-text" id="cfg-update-desc"><span data-i18n="cfg.updates.version">Current version:</span> <b style="color:var(--text-primary)" id="cfg-version-label">v1.9.8</b></p>
+                <p class="cfg-desc-text" id="cfg-update-desc"><span data-i18n="cfg.updates.version">Current version:</span> <b style="color:var(--text-primary)" id="cfg-version-label">v1.9.9</b></p>
                 <button class="cfg-save-btn" id="cfg-update-btn" onclick="cfgCheckUpdate()" data-i18n="cfg.updates.btn">🔍 Check for Updates</button>
               </div>
 
@@ -5792,7 +5792,23 @@ WHAT YOU WILL RECEIVE:
                   <div style="padding:18px">
 
                     <div style="display:flex;flex-direction:column;gap:14px">
-                      <div style="font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--text-secondary);font-weight:700;padding-bottom:8px;border-bottom:1px solid var(--border)">Trade Flow</div>
+                      <!-- Launch Delay -->
+                      <div style="font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--text-secondary);font-weight:700;padding-bottom:8px;border-bottom:1px solid var(--border)">Launch Settings</div>
+                      <div style="display:flex;align-items:center;gap:12px">
+                        <div style="flex:1">
+                          <label style="font-size:10px;color:var(--text-secondary);display:block;margin-bottom:5px">
+                            Game Launch Delay (seconds)
+                          </label>
+                          <input id="adlv-launch-delay" type="number" min="10" max="120" value="35"
+                            oninput="localStorage.setItem('adlv_launch_delay',this.value)"
+                            class="cfg-input" style="width:100%;box-sizing:border-box">
+                        </div>
+                        <div style="font-size:10px;color:var(--text-secondary);flex:2;padding-top:18px;line-height:1.5">
+                          Tempo que o app aguarda o Roblox entrar no servidor antes de liberar a trade para o script. Aumente se o Roblox demorar mais para carregar.
+                        </div>
+                      </div>
+
+                      <div style="font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--text-secondary);font-weight:700;padding-top:4px;padding-bottom:8px;border-top:1px solid var(--border);border-bottom:1px solid var(--border)">Trade Flow</div>
 
                       <div>
                         <label style="font-size:10px;color:var(--text-secondary);display:flex;align-items:center;gap:5px;margin-bottom:6px">
@@ -7631,10 +7647,19 @@ Don't worry — your remaining items may come from a different account, but your
 
     function rbDoImportData(data) {
       const MS_ATTR = {
-        '0':{'v':'0','id':'0-0'},'0/24':{'v':'0-24-ms','id':'0-1'},'25/49':{'v':'25-49-ms','id':'0-2'},
-        '50/99':{'v':'50-99-ms','id':'0-3'},'100/249':{'v':'100-249-ms','id':'0-4'},
-        '250/499':{'v':'250-499-ms','id':'0-5'},'500/749':{'v':'500-749-ms','id':'0-6'},
-        '750/999':{'v':'750-999-ms','id':'0-7'},'1-4b':{'v':'1-4-bs','id':'0-8'},'5-9b':{'v':'5-9-bs','id':'0-9'},'10-19b':{'v':'10-19-bs','id':'0-10'},'20b+':{'v':'20-plus-bs','id':'0-11'},
+        '0':     {'v':'0',           'id':'0-0' },
+        'ks':    {'v':'0-99999-ks',  'id':'0-12'},
+        '0/24':  {'v':'0-24-ms',     'id':'0-1' },
+        '25/49': {'v':'25-49-ms',    'id':'0-2' },
+        '50/99': {'v':'50-99-ms',    'id':'0-3' },
+        '100/249':{'v':'100-249-ms', 'id':'0-4' },
+        '250/499':{'v':'250-499-ms', 'id':'0-5' },
+        '500/749':{'v':'500-749-ms', 'id':'0-6' },
+        '750/999':{'v':'750-999-ms', 'id':'0-7' },
+        '1-4b':  {'v':'1-4-bs',      'id':'0-8' },
+        '5-9b':  {'v':'5-9-bs',      'id':'0-9' },
+        '10-19b':{'v':'10-19-bs',    'id':'0-10'},
+        '20b+':  {'v':'20-plus-bs',  'id':'0-11'},
       };
       const MUT_ATTR = {
         'None':{'v':'none','id':'1-0'},'Gold':{'v':'gold','id':'1-1'},'Diamond':{'v':'diamond','id':'1-2'},
@@ -8305,7 +8330,8 @@ Don't worry — your remaining items may come from a different account, but your
       rbUpdateAvatars();
     }
 
-    const _RB_PET_IMG_BASE = 'https://raw.githubusercontent.com/marselow/lister-releases/main/pet-images/';
+    const _RB_PET_IMG_BASE   = 'https://raw.githubusercontent.com/marselow/lister-releases/main/pet-images/';
+    const _RB_TRAIT_IMG_BASE = 'https://raw.githubusercontent.com/marselow/lister-releases/main/trait-images/';
     function _rbPetImgPath(name) {
       if (!name) return '';
       const file = name.replace(/\s+/g, '_').replace(/[^\w\-().]/g, '') + '.png';
@@ -9789,16 +9815,23 @@ Don't worry — your remaining items may come from a different account, but your
           }
           const pet = (acc.pets || []).find(p => p._uid === res.pet_uuid);
           if (!pet) {
-            adlvLog(`[${offerId}] CANCELANDO: Pet com UUID ${res.pet_uuid} não encontrado em "${res.account_username}"`, 'error');
+            adlvLog(`[${offerId}] CANCELANDO: Pet com UUID ${res.pet_uuid} não encontrado em "${res.account_username}" — row inválida removida`, 'error');
             try {
               await apiRequest(eldoradoCookie, '/api/orders/me/' + order.id + '/cancel', {
                 method: 'POST',
                 body: { sellerCancelationReason: 'Pet não encontrado', message: '' },
               });
               if (order.id) {
-                // Multi-qty: apaga só a reserva sem pet, libera as demais (válidas) para a fila.
-                await _db.query('DELETE FROM offer_accounts WHERE order_id = ? AND pet_uuid = ? LIMIT 1', [order.id, res.pet_uuid]);
+                // Libera as demais reservas da order (multi-qty)
                 await _db.query('UPDATE offer_accounts SET order_id = NULL WHERE order_id = ?', [order.id]);
+              }
+              // Remove TODAS as rows com esse pet_uuid — evita que o UUID inválido
+              // seja re-reservado em pedidos futuros (duplicata ou row órfã)
+              if (_currentUser) {
+                await _db.query(
+                  'DELETE FROM offer_accounts WHERE user_id=? AND pet_uuid=?',
+                  [_currentUser.id, res.pet_uuid]
+                );
               }
             } catch(e) { console.error('[ADLV] Erro ao cancelar:', e); }
             return;
@@ -9824,14 +9857,6 @@ Don't worry — your remaining items may come from a different account, but your
           const petSnapshot = JSON.parse(JSON.stringify(pet));
           const accKey = String(account.userID || account.username);
           const accUsername = account.username;
-
-          // Remove do inventário
-          if (pet._uid) {
-            account.pets = account.pets.filter(p => p._uid !== pet._uid);
-          } else {
-            const i = account.pets.findIndex(p => p.name === pet.name);
-            if (i !== -1) account.pets.splice(i, 1);
-          }
 
           adlvLog(`[${offerId}] ${totalParts > 1 ? `Parte ${idx+1}/${totalParts} - ` : ''}Enfileirado: ${pet.name}`, 'info');
           adlvQueueAdd({
@@ -13189,11 +13214,16 @@ Don't worry — your remaining items may come from a different account, but your
     async function lstFixMsNumeric() {
       if (!eldoradoCookie) return;
       const targets = lstOffers.filter(o => {
-        const hasNumeric = (o.attributes || []).some(a => a.id === 'steal-a-brainrot-ms-numeric');
-        return !hasNumeric && alParseMs(o.offerTitle || '') !== null;
+        const parsedMs = alParseMs(o.offerTitle || '');
+        if (parsedMs === null) return false;
+        const expected = alMsToNumeric(parsedMs);
+        const existing = (o.attributes || []).find(a => a.id === 'steal-a-brainrot-ms-numeric');
+        if (!existing) return true; // sem atributo — adicionar
+        const current = parseFloat(existing.value?.name ?? existing.value ?? 0);
+        return Math.abs(current - expected) >= 0.005; // valor diferente do esperado (2 casas)
       });
-      if (!targets.length) { appAlert('Todos os anúncios já têm M/s numeric.'); return; }
-      if (!await appConfirm(`Atualizar ${targets.length} anúncio(s) adicionando M/s numeric?`)) return;
+      if (!targets.length) { appAlert('Todos os anúncios já têm M/s numeric correto.'); return; }
+      if (!await appConfirm(`Atualizar ${targets.length} anúncio(s) com M/s numeric correto?`)) return;
 
       let done = 0, failed = 0;
       for (const offer of targets) {
@@ -13201,10 +13231,12 @@ Don't worry — your remaining items may come from a different account, but your
         const msNumeric = alMsToNumeric(parsedMs || 0);
         const tEnvs = offer.tradeEnvironmentValues || [];
         const tradeEnvId = tEnvs.length > 0 ? tEnvs[tEnvs.length - 1].id : null;
-        const offerAttrs = (offer.attributes || []).map(a => ({
-          id: a.id, type: a.type,
-          value: a.type === 'Select' ? (a.value?.id ?? a.value) : a.value
-        }));
+        const offerAttrs = (offer.attributes || [])
+          .filter(a => a.id !== 'steal-a-brainrot-ms-numeric') // remove existente para substituir
+          .map(a => ({
+            id: a.id, type: a.type,
+            value: a.type === 'Select' ? (a.value?.id ?? a.value) : a.value
+          }));
         offerAttrs.push({ id: 'steal-a-brainrot-ms-numeric', type: 'Numeric', value: msNumeric });
 
         const _price = offer.pricePerUnit || offer.pricePerUnitInUSD;
@@ -13454,18 +13486,26 @@ Don't worry — your remaining items may come from a different account, but your
     // M/s label → filter range key
     const AL_MS_MAP = {
       '0': '0', '0 m/s': '0',
-      '0-24 m/s': '0/24', '0/24 m/s': '0/24',
-      '25-49 m/s': '25/49', '25/49 m/s': '25/49',
-      '50-99 m/s': '50/99', '50/99 m/s': '50/99',
-      '100-249 m/s': '100/249', '100/249 m/s': '100/249',
-      '250-499 m/s': '250/499', '250/499 m/s': '250/499',
-      '500-749 m/s': '500/749', '500/749 m/s': '500/749',
-      '750-999 m/s': '750/999', '750/999 m/s': '750/999',
-      '1+ b/s': '1b', '1b/s': '1b',
+      // K/s
+      '1-999.99 k/s': 'ks', '1-999 k/s': 'ks',
+      // M/s (old e new labels)
+      '0-24 m/s': '0/24', '0/24 m/s': '0/24', '1-24.99 m/s': '0/24', '1-24 m/s': '0/24',
+      '25-49 m/s': '25/49', '25/49 m/s': '25/49', '25-49.99 m/s': '25/49',
+      '50-99 m/s': '50/99', '50/99 m/s': '50/99', '50-99.99 m/s': '50/99',
+      '100-249 m/s': '100/249', '100/249 m/s': '100/249', '100-249.99 m/s': '100/249',
+      '250-499 m/s': '250/499', '250/499 m/s': '250/499', '250-499.99 m/s': '250/499',
+      '500-749 m/s': '500/749', '500/749 m/s': '500/749', '500-749.99 m/s': '500/749',
+      '750-999 m/s': '750/999', '750/999 m/s': '750/999', '750-999.99 m/s': '750/999',
+      '1+ b/s': '1-4b', '1b/s': '1-4b',
     };
 
     function alMsRangeFromLabel(label) {
       const l = (label || '').toLowerCase().trim();
+      // K/s label
+      if (/[\d.,]+\s*k(?:\/s)?/i.test(l)) {
+        const parsed = alParseMs(label);
+        if (parsed !== null) return alGenRangeFromNum(parsed);
+      }
       // Any B/s value — parse and bucket by gen
       if (/[\d.,]+\s*b(?:\/s)?/i.test(l)) {
         const parsed = alParseMs(label);
@@ -13484,22 +13524,20 @@ Don't worry — your remaining items may come from a different account, but your
       return '';
     }
 
-    // Convert raw Hz to numeric value in display unit (M/s or B/s) for steal-a-brainrot-ms-numeric
+    // Convert raw generation (units/s) to numeric value in display unit for steal-a-brainrot-ms-numeric
     function alMsToNumeric(ms) {
       if (!ms) return 0;
-      if (ms >= 1e9) return Math.round((ms / 1e9) * 10) / 10; // 1.9B/s → 1.9
-      return Math.round((ms / 1e6) * 10) / 10;                 // 175.5M/s → 175.5
+      if (ms >= 1e9) return Math.round((ms / 1e9) * 100) / 100; // B/s
+      if (ms >= 1e6) return Math.round((ms / 1e6) * 100) / 100; // M/s
+      return Math.round((ms / 1e3) * 100) / 100;                 // K/s
     }
 
-    // For scanner format (raw generation number)
+    // For scanner format (raw generation number) → display label
     function alGenMs(gen) {
       if (typeof gen !== 'number') return gen || '';
-      if (gen >= 1e9) {
-        const v = Math.floor(gen / 1e8) / 10;
-        return (v % 1 === 0 ? v.toFixed(0) : v.toFixed(1)) + 'B/s';
-      }
-      const m = Math.floor(gen / 1e5) / 10;
-      return (m % 1 === 0 ? m.toFixed(0) : m.toFixed(1)) + 'M/s';
+      if (gen >= 1e9) return (Math.round((gen / 1e9) * 100) / 100).toFixed(2) + 'B/s';
+      if (gen >= 1e6) return (Math.round((gen / 1e6) * 100) / 100).toFixed(2) + 'M/s';
+      return (Math.round((gen / 1e3) * 100) / 100).toFixed(2) + 'K/s';
     }
     function alCleanMs(label) {
       return (label || '').replace(/\.0([MB])/g, '$1');
@@ -13507,9 +13545,10 @@ Don't worry — your remaining items may come from a different account, but your
 
     function alGenRangeFromNum(gen) {
       const m = gen / 1e6;
-      if (gen === 0) return '0';
-      if (m < 25)    return '0/24';
-      if (m < 50)    return '25/49';
+      if (gen === 0)    return '0';
+      if (gen < 1e6)    return gen >= 1e3 ? 'ks' : '0'; // 1-999.99 K/s
+      if (m < 25)       return '0/24';
+      if (m < 50)       return '25/49';
       if (m < 100)   return '50/99';
       if (m < 250)   return '100/249';
       if (m < 500)   return '250/499';
@@ -13625,18 +13664,19 @@ Don't worry — your remaining items may come from a different account, but your
         rbDoImportData(data);
         // M/s range key → { attrValueId, attrIdCsvId }
         const MS_ATTR = {
-          '0':       { v: '0',          id: '0-0' },
-          '0/24':    { v: '0-24-ms',    id: '0-1' },
-          '25/49':   { v: '25-49-ms',   id: '0-2' },
-          '50/99':   { v: '50-99-ms',   id: '0-3' },
-          '100/249': { v: '100-249-ms', id: '0-4' },
-          '250/499': { v: '250-499-ms', id: '0-5' },
-          '500/749': { v: '500-749-ms', id: '0-6' },
-          '750/999': { v: '750-999-ms', id: '0-7' },
-          '1-4b':    { v: '1-4-bs',      id: '0-8' },
-          '5-9b':    { v: '5-9-bs',      id: '0-9' },
-          '10-19b':  { v: '10-19-bs',    id: '0-10' },
-          '20b+':    { v: '20-plus-bs',  id: '0-11' },
+          '0':      { v: '0',           id: '0-0'  },
+          'ks':     { v: '0-99999-ks',  id: '0-12' },
+          '0/24':   { v: '0-24-ms',     id: '0-1'  },
+          '25/49':  { v: '25-49-ms',    id: '0-2'  },
+          '50/99':  { v: '50-99-ms',    id: '0-3'  },
+          '100/249':{ v: '100-249-ms',  id: '0-4'  },
+          '250/499':{ v: '250-499-ms',  id: '0-5'  },
+          '500/749':{ v: '500-749-ms',  id: '0-6'  },
+          '750/999':{ v: '750-999-ms',  id: '0-7'  },
+          '1-4b':   { v: '1-4-bs',      id: '0-8'  },
+          '5-9b':   { v: '5-9-bs',      id: '0-9'  },
+          '10-19b': { v: '10-19-bs',    id: '0-10' },
+          '20b+':   { v: '20-plus-bs',  id: '0-11' },
         };
         const MUT_ATTR = {
           'None':       { v: 'none',       id: '1-0' },
@@ -14182,6 +14222,35 @@ Don't worry — your remaining items may come from a different account, but your
       });
     }
 
+    function loadImageFromUrl(url) {
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = () => resolve(img);
+        img.onerror = () => reject(new Error('Fetch failed: ' + url));
+        img.src = url;
+      });
+    }
+
+    async function loadPetImage(petName) {
+      const petFile = (petName || '').replace(/ /g, '_') + '.png';
+      const localPath = path.join(__dirname, 'public', 'pet-image', petFile);
+      if (fs.existsSync(localPath)) return loadImageFromFile(localPath);
+      return loadImageFromUrl(_RB_PET_IMG_BASE + petFile);
+    }
+
+    async function loadTraitImage(traitName) {
+      const base = (traitName || '').replace(/:/g, '').replace(/ /g, '_');
+      const traitDir = path.join(__dirname, 'public', 'trait-image');
+      // Try local candidates first (png/webp/jpg)
+      for (const ext of ['png', 'webp', 'jpg']) {
+        const localPath = path.join(traitDir, base + '.' + ext);
+        if (fs.existsSync(localPath)) return loadImageFromFile(localPath);
+      }
+      // Fall back to GitHub trait-images repo
+      return loadImageFromUrl(_RB_TRAIT_IMG_BASE + base + '.png');
+    }
+
     function alMutationTemplate(mutation) {
       // Normalize: "YinYang" → "Yin Yang", "Yin_Yang" → "Yin Yang", "yin-yang" → "yin yang"
       const m = (mutation || '').replace(/[-_]/g, ' ').replace(/([a-z])([A-Z])/g, '$1 $2').trim();
@@ -14214,10 +14283,8 @@ Don't worry — your remaining items may come from a different account, but your
       const PET_MAX_W = SIZE * 0.72;
       const PET_MAX_H = SIZE * 0.50;
       const PET_TOP   = SIZE * 0.25;
-      const petFile = (pet.name || '').replace(/ /g, '_') + '.png';
-      const petPath = path.join(__dirname, 'public', 'pet-image', petFile);
       try {
-        const petImg = await loadImageFromFile(petPath);
+        const petImg = await loadPetImage(pet.name);
         const scale  = Math.min(PET_MAX_W / petImg.width, PET_MAX_H / petImg.height);
         const pw = petImg.width  * scale;
         const ph = petImg.height * scale;
@@ -14237,14 +14304,8 @@ Don't worry — your remaining items may come from a different account, but your
         const totalW = traits.length * TRAIT_SIZE + (traits.length - 1) * TRAIT_GAP;
         let tx = (SIZE - totalW) / 2;
         for (const traitName of traits) {
-          const base = traitName.replace(/:/g, '').replace(/ /g, '_');
-          const traitDir = path.join(__dirname, 'public', 'trait-image');
-          const candidates = [base + '.png', base + '.webp', base + '.jpg'];
           let ti = null;
-          for (const fname of candidates) {
-            const tp = path.join(traitDir, fname);
-            try { ti = await loadImageFromFile(tp); break; } catch { /* try next */ }
-          }
+          try { ti = await loadTraitImage(traitName); } catch { /* not found */ }
           if (ti) {
             ctx.imageSmoothingEnabled = true;
             ctx.drawImage(ti, tx, TRAITS_Y, TRAIT_SIZE, TRAIT_SIZE);
@@ -14288,6 +14349,67 @@ Don't worry — your remaining items may come from a different account, but your
       console.log('[PROBE]', JSON.stringify(result, null, 2));
       if (statusEl) statusEl.textContent = 'Resultado no console (F12)';
       appAlert('Resultado do probe:\n' + JSON.stringify(result, null, 2));
+    }
+
+    async function alProbeMsAttrs() {
+      if (!eldoradoCookie) { appAlert('Faça login primeiro.'); return; }
+      const lines = [];
+      try {
+        // 1. Endpoints que retornam opções de atributos do jogo 259
+        const endpoints = [
+          '/api/v1/item-management/me/games/259/offer-attributes',
+          '/api/v1/item-management/augmented-games/259/offer-attributes',
+          '/api/v1/augmented-games/259/offer-attributes',
+          '/api/v1/item-management/me/augmented-games/259',
+          '/api/v1/item-management/augmented-games/259',
+        ];
+        for (const ep of endpoints) {
+          try {
+            const r = await apiRequest(eldoradoCookie, ep);
+            const body = JSON.stringify(r.json, null, 2);
+            lines.push(`\n=== ${ep} ===\n${body.slice(0, 2000)}`);
+          } catch(e) { lines.push(`\n=== ${ep} === ERROR: ${e.message}`); }
+        }
+
+        // 2. Listar atributos das minhas ofertas (para ver o formato atual)
+        const myOffers = await apiRequest(eldoradoCookie, '/api/v1/item-management/me/offers?pageSize=5');
+        const items = myOffers.json?.results || myOffers.json?.items || myOffers.json?.data || [];
+        lines.push('\n=== ATRIBUTOS DAS MINHAS OFERTAS ===');
+        const seen = new Set();
+        for (const item of items.slice(0, 5)) {
+          const o = item.offer || item;
+          const msAttr = (o.attributes || []).find(a => a.id?.includes('ms'));
+          const msTev  = (o.tradeEnvironmentValues || []).find(t => t.name === 'M/s' || t.name === 'M/s value' || t.name === 'K/s');
+          const key = JSON.stringify({ msAttr, msTev });
+          if (!seen.has(key)) { seen.add(key); lines.push(JSON.stringify({ msAttr, msTev, offerTitle: o.offerTitle }, null, 2)); }
+        }
+
+        // 3. Busca pública de anúncios para coletar atributos
+        const pub = await apiRequest(eldoradoCookie, '/api/v1/item-management/offers?gameId=259&category=CustomItem&pageSize=10&useMinPurchasePrice=false');
+        const pubItems = pub.json?.results || pub.json?.items || pub.json?.data || [];
+        lines.push('\n=== ATRIBUTOS DE ANÚNCIOS PÚBLICOS ===');
+        const msVals = new Map();
+        for (const item of pubItems) {
+          const o = item.offer || item;
+          for (const a of (o.attributes || [])) {
+            if (a.id?.includes('ms') || a.id?.includes('ks')) {
+              const k = a.id + '||' + JSON.stringify(a.value);
+              if (!msVals.has(k)) msVals.set(k, { id: a.id, type: a.type, value: a.value });
+            }
+          }
+          for (const t of (o.tradeEnvironmentValues || [])) {
+            if (t.name?.includes('/s') || t.name?.includes('M/s') || t.name?.includes('K/s')) {
+              const k = t.name + '||' + t.value;
+              if (!msVals.has(k)) msVals.set(k, t);
+            }
+          }
+        }
+        msVals.forEach(v => lines.push(JSON.stringify(v)));
+      } catch(e) { lines.push('Erro geral: ' + e.message); }
+
+      const result = lines.join('\n');
+      console.log('[PROBE-MS]', result);
+      appAlert('Resultado no console (F12)\n\n' + result.slice(0, 1500));
     }
 
     async function alAttachImage(uid, input) {
@@ -15636,10 +15758,19 @@ Don't worry — your remaining items may come from a different account, but your
     // ── Convert API ms attribute value → internal range key ──
     function lstMsApiToRange(apiVal) {
       const map = {
-        '0':'0', '0-24-ms':'0/24', '25-49-ms':'25/49', '50-99-ms':'50/99',
+        '0':'0',
+        // K/s (novo range sub-1M)
+        '0-99999-ks':'ks',
+        // M/s — IDs antigos (ainda aceitos pela API)
+        '0-24-ms':'0/24', '25-49-ms':'25/49', '50-99-ms':'50/99',
         '100-249-ms':'100/249', '250-499-ms':'250/499', '500-749-ms':'500/749',
-        '750-999-ms':'750/999', '1-4-bs':'1-4b', '5-9-bs':'5-9b',
-        '10-19-bs':'10-19b', '20-plus-bs':'20b+'
+        '750-999-ms':'750/999',
+        // M/s — novos IDs gerados pela Eldorado
+        '1-2499-ms':'0/24', '25-4999-ms':'25/49', '50-9999-ms':'50/99',
+        '100-24999-ms':'100/249', '250-49999-ms':'250/499',
+        '500-74999-ms':'500/749', '750-99999-ms':'750/999',
+        // B/s
+        '1-4-bs':'1-4b', '5-9-bs':'5-9b', '10-19-bs':'10-19b', '20-plus-bs':'20b+'
       };
       return map[apiVal] || '';
     }
@@ -16400,6 +16531,7 @@ Don't worry — your remaining items may come from a different account, but your
     //              nick, status, msgs, createdAt }
     // status: awaiting_nick | nick_confirming | ready | trading | done | failed
     const _adlvQueue = [];
+    let _adlvOfflineRetryTimer = null;
 
     function adlvQueueAdd(item) {
       // Dedup by orderId + petUUID (allows multi-qty: same orderId, different pets)
@@ -16680,6 +16812,9 @@ Don't worry — your remaining items may come from a different account, but your
     async function adlvDispatchNextReady() {
       if (!_adlvEnabled) return;
 
+      // Cancel any pending offline retry timer — new dispatch takes over
+      if (_adlvOfflineRetryTimer) { clearTimeout(_adlvOfflineRetryTimer); _adlvOfflineRetryTimer = null; }
+
       // Lock: só despacha se NÃO houver outra trade em andamento
       const inProgress = _adlvQueue.find(i => i.status === 'trading');
       if (inProgress) {
@@ -16692,7 +16827,7 @@ Don't worry — your remaining items may come from a different account, but your
 
       adlvQueueSetStatus(item.offerId, 'trading');
 
-      // Monta o pending trade com mensagens customizadas
+      // Monta o pending trade com mensagens customizadas (enviado só após Roblox carregar)
       const pending = {
         offerId:      item.offerId,
         nick:         item.nick,
@@ -16702,12 +16837,16 @@ Don't worry — your remaining items may come from a different account, but your
         ...adlvGetMessages()
       };
 
-      try {
-        const { ipcRenderer } = require('electron');
-        ipcRenderer.send('adlv-set-pending', pending);
-      } catch(e) {}
+      const { ipcRenderer } = require('electron');
 
-      // Lança a conta
+      // 1. Fecha instâncias antigas do Roblox para garantir ambiente limpo
+      try {
+        await ipcRenderer.invoke('rbx-close-all');
+        adlvLog(`[${item.offerId}] Roblox anterior encerrado`, 'info');
+      } catch(e) {}
+      await new Promise(r => setTimeout(r, 2000));
+
+      // 2. Lança a conta
       if (item.accountKey) {
         const accounts = rbLoad();
         const acc = accounts.find(a => String(a.userID || a.username) === String(item.accountKey));
@@ -16724,6 +16863,24 @@ Don't worry — your remaining items may come from a different account, but your
           }
         }
       }
+
+      // 3. Aguarda o Roblox entrar no jogo antes de liberar a trade para o Lua
+      //    Lê o delay configurado pelo usuário (padrão 35s)
+      const launchDelaySec = Math.max(10, parseInt(
+        document.getElementById('adlv-launch-delay')?.value || '35', 10
+      ) || 35);
+      adlvLog(`[${item.offerId}] Aguardando Roblox entrar no jogo (${launchDelaySec}s)...`, 'info');
+      for (let s = launchDelaySec; s > 0; s--) {
+        if (!_adlvEnabled) return; // cancelado pelo usuário
+        adlvLog(`[${item.offerId}] Trade disponível em ${s}s...`, 'info');
+        await new Promise(r => setTimeout(r, 1000));
+      }
+
+      // 4. Agora libera a trade — o Roblox já deve estar no jogo
+      try {
+        ipcRenderer.send('adlv-set-pending', pending);
+        adlvLog(`[${item.offerId}] Trade liberada para o Lua script`, 'success');
+      } catch(e) {}
     }
 
     async function adlvSendMsg(convId, message) {
@@ -16768,6 +16925,27 @@ Don't worry — your remaining items may come from a different account, but your
               await _db.query('DELETE FROM offer_accounts WHERE order_id = ?', [item.orderId]);
             } catch(e) { console.error('[ADLV] Erro ao remover reserva:', e); }
           }
+          // Apaga qualquer row órfã com o mesmo pet_uuid (duplicatas ou rows liberadas
+          // por falha anterior). Previne que um pet já entregue seja re-reservado.
+          if (item?.petUUID && _currentUser) {
+            try {
+              await _db.query(
+                'DELETE FROM offer_accounts WHERE user_id=? AND pet_uuid=?',
+                [_currentUser.id, item.petUUID]
+              );
+            } catch(e) {}
+          }
+
+          // Remove o pet do inventário da conta agora que a entrega foi confirmada
+          try {
+            const accounts = rbLoad();
+            const acc = accounts.find(a => String(a.userID || a.username) === String(item.accountKey));
+            if (acc && item.petUUID) {
+              acc.pets = acc.pets.filter(p => p._uid !== item.petUUID);
+              rbSave(accounts);
+              rbRender();
+            }
+          } catch(e) {}
 
           // Rename video with buyer name and timestamp
           try {
@@ -16834,6 +17012,9 @@ Don't worry — your remaining items may come from a different account, but your
           }, 3000);
 
         } else if (data.status === 'offline') {
+          // Cancel any stacked retry timer from a previous offline report
+          if (_adlvOfflineRetryTimer) { clearTimeout(_adlvOfflineRetryTimer); _adlvOfflineRetryTimer = null; }
+
           // Marca momento da primeira vez offline
           if (!item.offlineFirstAt) {
             adlvQueueSetStatus(data.offerId, 'pending_retry', { offlineFirstAt: Date.now() });
@@ -16897,6 +17078,13 @@ Don't worry — your remaining items may come from a different account, but your
               adlvLog(`[${data.offerId}] Erro ao cancelar venda: ${e.message}`, 'error');
             }
 
+            // Fecha Roblox — trade cancelada por timeout offline
+            try {
+              const { ipcRenderer } = require('electron');
+              await ipcRenderer.invoke('rbx-close-all');
+              adlvLog(`[${data.offerId}] Roblox encerrado após timeout offline`, 'warn');
+            } catch(e) {}
+
             setTimeout(() => adlvDispatchNextReady(), 3000);
             return;
           }
@@ -16935,12 +17123,25 @@ Don't worry — your remaining items may come from a different account, but your
             setTimeout(() => adlvDispatchNextReady(), 4000);
 
           } else {
-            // Nenhum outro item pronto — tenta de novo em 30s
-            adlvLog(`[${data.offerId}] Offline — nenhum outro item pronto, tentando em 30s`, 'warn');
+            // Nenhum outro item pronto — reenvia pending ao Roblox existente em 30s (sem relançar)
+            adlvLog(`[${data.offerId}] Offline — aguardando buyer voltar, reenviando em 30s (sem fechar Roblox)`, 'warn');
             adlvQueueSetStatus(data.offerId, 'pending_retry');
-            setTimeout(() => {
-              adlvQueueSetStatus(data.offerId, 'ready');
-              adlvDispatchNextReady();
+
+            // Cancel any previous stacked retry timer
+            if (_adlvOfflineRetryTimer) { clearTimeout(_adlvOfflineRetryTimer); _adlvOfflineRetryTimer = null; }
+
+            _adlvOfflineRetryTimer = setTimeout(() => {
+              _adlvOfflineRetryTimer = null;
+              const stillInQueue = _adlvQueue.find(i => i.offerId === data.offerId);
+              if (!stillInQueue || stillInQueue.status === 'done' || stillInQueue.status === 'failed') return;
+              // Keep Roblox running — just re-send the pending trade so Lua picks it up
+              adlvQueueSetStatus(data.offerId, 'trading');
+              const pending = {
+                offerId: item.offerId, nick: item.nick, petName: item.petName,
+                petUUID: item.petUUID, accountKey: item.accountKey, ...adlvGetMessages()
+              };
+              try { require('electron').ipcRenderer.send('adlv-set-pending', pending); } catch(e) {}
+              adlvLog(`[${data.offerId}] Pending reenviado ao Roblox existente`, 'info');
             }, 30000);
           }
 
@@ -17339,6 +17540,10 @@ Don't worry — your remaining items may come from a different account, but your
       ['adlv-msg-greeting','adlv-msg-confirm-nick','adlv-msg-trading','adlv-msg-accept',
        'adlv-msg-thankyou','adlv-msg-base-full','adlv-msg-cancelled','adlv-msg-offline','adlv-msg-timeout']
         .forEach(id => adlvAutoResize(document.getElementById(id)));
+      // Restore launch delay
+      const savedDelay = localStorage.getItem('adlv_launch_delay');
+      const delayEl = document.getElementById('adlv-launch-delay');
+      if (delayEl && savedDelay) delayEl.value = savedDelay;
     }
 
     function adlvGetMessages() {
